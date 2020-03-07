@@ -3,9 +3,10 @@ import zmq
 import random
 import sys
 import time
+from collections import defaultdict
+machines = defaultdict(lambda : None)
 
-
-machines = dict()
+# machines = dict()
 
 def secondPassed(oldsecond):
     currentsecond = time.gmtime()[5]
@@ -15,13 +16,16 @@ def secondPassed(oldsecond):
     else:
         return False
 
-def checkAlive(m):
-    dead = []
-    for i in m:
-        if secondPassed(m[i][1]):
-            print("Machine#: ", str(m[i][0]) + " ", "died")
-            dead.append(m[i][0])
-    return dead
+def checkAlive(temp_m):
+    m = temp_m
+    if m:
+        for i in m:
+            if m[i][2] == 1:
+                if secondPassed(m[i][1]):
+                    print("Machine#: ", str(m[i][0]) + " ", "died")
+                    m[i][2] = 0
+
+    return m
 
 
 port1 = "5556"
@@ -35,7 +39,7 @@ if len(sys.argv) > 1:
     port1 = int(port1)
     
     
-def sub():
+def sub(machines):
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
     socket.subscribe("")
@@ -47,17 +51,13 @@ def sub():
             try:
                 work = socket.recv_pyobj()
             except zmq.error.Again:
-                dead = checkAlive(machines)
-                for i in dead:
-                    del machines[i]
+                machines = checkAlive(machines)
                 continue    
-
+            
             machineN = work['Machine#']
             message = work['message']
-            machines[machineN] = (machineN, time.gmtime()[5])
+            machines[machineN] = [machineN, time.gmtime()[5], 1]
             print("Subscriber received from machine#:", str(machineN) + " ", message)
-            dead = checkAlive(machines)
-            for i in dead:
-                del machines[i]
+            machines = checkAlive(machines)
         
-sub()
+sub(machines)
