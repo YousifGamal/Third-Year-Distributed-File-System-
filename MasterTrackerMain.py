@@ -1,12 +1,65 @@
 from multiprocessing import *
 import time
-import time
+
 import pandas as pd
 import numpy as np
+
+import zmq
+import random
+import sys
+
+def secondPassed(oldsecond):
+    currentsecond = time.gmtime()[5]
+    if ((currentsecond - oldsecond) >= 2):
+        oldsecond = currentsecond
+        return True
+    else:
+        return False
+
+def checkAlive(m):
+    dead = []
+    for i in m:
+        if secondPassed(m[i][1]):
+            print("Machine#: ", str(m[i][0]) + " ", "died")
+            dead.append(m[i][0])
+    return dead
+
+ports = ["5556", "5557"]
+
+machines = dict()
+
 
 def add_row(inp):
     return {"user id" : inp[0] , 'file name ' : inp[1] , 'data node number':inp[2],
             'file path on that data node':inp[3],'is data node alive':inp[4]}
+
+def master_heart_beat():
+    context = zmq.Context()
+    socket = context.socket(zmq.SUB)
+    socket.subscribe("")
+    socket.RCVTIMEO = 0
+    socket.connect("tcp://127.0.0.1:%s" % port1)
+    while True:
+        for port in ports:
+            socket.connect("tcp://127.0.0.1:%s" % port)
+            try:
+                work = socket.recv_pyobj()
+            except zmq.error.Again:
+                dead = checkAlive(machines)
+                for i in dead:
+                    del machines[i]
+                continue    
+
+            machineN = work['Machine#']
+            message = work['message']
+            machines[machineN] = (machineN, time.gmtime()[5])
+            #print("Subscriber received from machine#:", str(machineN) + " ", message)
+            dead = checkAlive(machines)
+            for i in dead:
+                del machines[i]
+        
+
+
 
 
 def all(ns,lock,fg):
