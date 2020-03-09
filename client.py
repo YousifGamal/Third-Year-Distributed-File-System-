@@ -34,11 +34,10 @@ if command == 'upload':
     with open(filename,'rb') as file:
         video = file.read()
     file.close()
-    video_dict = {'name': filename, 'video':video, 'id': id}
+    video_dict = {'type':"Upload",'name': filename, 'video':video, 'id': id}
     msg = pickle.dumps(video_dict)
     dataSocket.send(msg)
-    #fromServer =  dataSocket.recv_string()
-    #print("server replied "+fromServer)
+    
     
     dataSocket.close()
 
