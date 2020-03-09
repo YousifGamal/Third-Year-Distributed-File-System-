@@ -34,16 +34,19 @@ def checkAlive(temp_m,ns,lock):
 
     return m
 
-ports = ["5556", "5557"]
 
-machines = dict()
+
+
 
 
 def add_row(inp):
     return {"user_id" : inp[0] , 'file_name' : inp[1] , 'data_node_number':inp[2],
             'file_path_on_that_data_node':inp[3],'is_data_node_alive':inp[4]}
 
-def master_heart_beat(machines, ns, lock):
+def master_heart_beat(lock,ns,datakeeper_number,machines,portsBusyList,machines_number):
+    ports = []
+    for i in range(machines_number):
+        ports.append(9000+i*2)
     context = zmq.Context()
     socket = context.socket(zmq.SUB)
     socket.subscribe("")
@@ -129,5 +132,5 @@ def all(ns,lock,fg,proc_num,datakeeper_number,machines,portsBusyList,machines_nu
  
      
     else:
-        master_heart_beat(machines,ns,lock)
+        master_heart_beat(lock,ns,datakeeper_number,machines,portsBusyList,machines_number)
         
