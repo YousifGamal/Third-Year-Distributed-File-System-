@@ -4,7 +4,7 @@ import sys
 import pickle
 import random
 
-hartBeatHandler(number){
+def hartBeatHandler(number):
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
     port = 9000+number*2
@@ -14,14 +14,15 @@ hartBeatHandler(number){
         data = {'Machine#':number, 'message':message}
         socket.send_pyobj(data)
         time.sleep(1)
-}
+
 
 type = int(sys.argv[1])
+number = int(sys.argv[2])
+masterProcesseNumbers = int(sys.argv[3])
+machineNumber = int(sys.argv[4])
 if type == 0:
-    hartBeatHandler(number)
+    hartBeatHandler(machineNumber)
 elif type == 1: #data keeper node
-    number = int(sys.argv[2])
-    masterProcesseNumbers = int(sys.argv[3])
     context = zmq.Context()
     socket = context.socket(zmq.REP)
     socket.bind(f"tcp://127.0.0.1:{number*2+8000}")# create server port
@@ -51,8 +52,8 @@ elif type == 1: #data keeper node
             socket.close()
             time.sleep(.1)
             socket = context.socket(zmq.REP)
-            print(number)
-            socket.bind(f"tcp://127.0.0.1:{number*2+8000}")
+            port = int(port)
+            socket.bind(f"tcp://127.0.0.1:{port}")
             print("i came here")
             content = pickle.loads(msg)
             print(content['name'])
@@ -60,8 +61,8 @@ elif type == 1: #data keeper node
             with open("yosry 5awal"+content['name'],"wb") as file:
                 file.write(content['video'])
                 file.close()
-            tableEntry = {'type':'Add','data':[content['id'],content['name'],number 
-                                ,content['name'], True]}
+            tableEntry = {'type':'Add','data':[content['id'],content['name'],machineNumber 
+                                ,content['name'], True, port]}
             print(tableEntry)
             respond = pickle.dumps(tableEntry)
             masterSocket.send(respond)
