@@ -4,7 +4,7 @@ python MasterTracker.py <no. of ports> <ports per machine for data> <no. of mach
 
 to run a data machine
 
-python machineScript.py <machine number> <ports per machine for data> <no. of master's port>
+python machineScript.py <master ip address> <ports per machine for data> <no. of master's port>
 
 to run client
 
