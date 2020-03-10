@@ -8,7 +8,7 @@ def hartBeatHandler(number):
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
     port = 9000+number*2
-    socket.bind(f"tcp://127.0.0.1:{port}")
+    socket.bind("tcp://"+local_ip+f":{port}")
     message = "I am alive"
     while True:
         data = {'Machine#':number, 'message':message}
@@ -20,12 +20,14 @@ type = int(sys.argv[1])
 number = int(sys.argv[2])
 masterProcesseNumbers = int(sys.argv[3])
 machineNumber = int(sys.argv[4])
+local_ip = sys.argv[5]
+master_ip = sys.argv[6]
 if type == 0:
     hartBeatHandler(machineNumber)
 elif type == 1: #data keeper node
     context = zmq.Context()
     socket = context.socket(zmq.REP)
-    socket.bind(f"tcp://127.0.0.1:{number*2+8000}")# create server port
+    socket.bind("tcp://"+local_ip+f":{number*2+8000}")# create server port
 
     masterSocket = context.socket(zmq.REQ)# connect to master sockets as client
     #randomiza connection to master nodes
@@ -36,7 +38,7 @@ elif type == 1: #data keeper node
 
     for i in masterPortsList:
         port = 6000+i*2
-        masterSocket.connect(f"tcp://127.0.0.1:{port}")
+        masterSocket.connect("tcp://"+master_ip+f":{port}")
     while True:
         msg = socket.recv()
         msg_dict = pickle.loads(msg)
@@ -62,7 +64,7 @@ elif type == 1: #data keeper node
             time.sleep(.1)
             socket = context.socket(zmq.REP)
             port = int(port)
-            socket.bind(f"tcp://127.0.0.1:{port}")
+            socket.bind("tcp://"+local_ip+f":{port}")
 
                 
             

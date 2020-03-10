@@ -42,7 +42,7 @@ def add_row(inp):
     return {"user_id" : inp[0] , 'file_name' : inp[1] , 'data_node_number':inp[2],
             'file_path_on_that_data_node':inp[3],'is_data_node_alive':inp[4]}
 
-def master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,machines_number):
+def master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,machines_number,IP_table):
     ports = list()
     for i in range(machines_number):
         ports.append(9000+i*2)
@@ -52,8 +52,8 @@ def master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,
     socket = context.socket(zmq.SUB)
     socket.subscribe("")
     socket.RCVTIMEO = 0
-    for port in ports:
-        socket.connect(f"tcp://127.0.0.1:{port}")
+    for i in range(len(ports)):
+        socket.connect("tcp://"+IP_table[i]+f":{ports[i]}")
     while True:
         try:
             work = socket.recv_pyobj()
@@ -82,14 +82,14 @@ def master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,
 
 
 
-def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,machinesNumber): 
+def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,machinesNumber,IP_table): 
     if (fg == 1):
         print("tez")
         datakeeper_number = dataKeeperNumberPerMachine*machinesNumber
         context = zmq.Context()
         socket = context.socket(zmq.REP)
         port = proc_num*2+6000
-        socket.bind(f"tcp://127.0.0.1:{port}")# create server port
+        socket.bind(f"tcp://"+IP_table[-1]+f":{port}")# create server port
         socket.RCVTIMEO = 0
         # create random order of data ports
         randomPortList = list(range(0,datakeeper_number))
@@ -141,7 +141,7 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
  
      
     else:
-        master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,machinesNumber)
+        master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,machinesNumber,IP_table)
         
 
 
