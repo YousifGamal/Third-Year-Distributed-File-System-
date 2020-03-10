@@ -26,7 +26,7 @@ def DNSClient(master_IP):
 
 master_IP = sys.argv[1]
 numberOfPorts = int(sys.argv[2])
-numberOfMasterPorts = int(sys.argv[2])
+numberOfMasterPorts = int(sys.argv[3])
 
 local_IP,machineNumber = DNSClient(master_IP)
 #open heart beat process

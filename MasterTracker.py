@@ -44,7 +44,8 @@ for i in range(processes_number):
 
 while True:
     print(portsStatusList)
-    time.sleep(1)
+    print(ns.df)
+    time.sleep(3)
 print(portsStatusList)
 print(ns.df)
 
