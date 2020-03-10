@@ -8,7 +8,7 @@ def hartBeatHandler(number):
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
     port = 9000+number*2
-    socket.bind(f"tcp://127.0.0.1:{port}")
+    socket.bind(f"tcp://192.168.43.177:{port}")
     message = "I am alive"
     while True:
         data = {'Machine#':number, 'message':message}
@@ -25,7 +25,7 @@ if type == 0:
 elif type == 1: #data keeper node
     context = zmq.Context()
     socket = context.socket(zmq.REP)
-    socket.bind(f"tcp://127.0.0.1:{number*2+8000}")# create server port
+    socket.bind(f"tcp://192.168.43.177:{number*2+8000}")# create server port
 
     masterSocket = context.socket(zmq.REQ)# connect to master sockets as client
     #randomiza connection to master nodes
@@ -36,7 +36,7 @@ elif type == 1: #data keeper node
 
     for i in masterPortsList:
         port = 6000+i*2
-        masterSocket.connect(f"tcp://127.0.0.1:{port}")
+        masterSocket.connect(f"tcp://192.168.43.209:{port}")
     while True:
         msg = socket.recv()
         msg_dict = pickle.loads(msg)
@@ -46,7 +46,7 @@ elif type == 1: #data keeper node
             content = msg_dict
             
             print(content['name'])
-            with open("yosry 5awal"+content['name'],"wb") as file:
+            with open(str(number)+"/"+content['name'],"wb") as file:
                 file.write(content['video'])
                 file.close()
             port = number*2+8000
@@ -62,7 +62,7 @@ elif type == 1: #data keeper node
             time.sleep(.1)
             socket = context.socket(zmq.REP)
             port = int(port)
-            socket.bind(f"tcp://127.0.0.1:{port}")
+            socket.bind(f"tcp://192.168.43.177:{port}")
 
                 
             
