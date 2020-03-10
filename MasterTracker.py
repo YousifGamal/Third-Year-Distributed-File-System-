@@ -15,7 +15,7 @@ datakeeper_number = int(sys.argv[2])
 machines_number = int(sys.argv[3])
 
 
-print(machines)
+#print(machines)
 manager = Manager()
 ns = manager.Namespace()
 ns.df = df

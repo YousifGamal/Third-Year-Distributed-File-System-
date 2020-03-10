@@ -4,7 +4,8 @@ import sys
 import pickle
 import random
 
-hartBeatHandler(number){
+def hartBeatHandler(number):
+
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
     port = 9000+number*2
@@ -14,7 +15,8 @@ hartBeatHandler(number){
         data = {'Machine#':number, 'message':message}
         socket.send_pyobj(data)
         time.sleep(1)
-}
+
+
 
 type = int(sys.argv[1])
 if type == 0:
@@ -57,16 +59,25 @@ elif type == 1: #data keeper node
             content = pickle.loads(msg)
             print(content['name'])
             #with open(content['name'],"wb") as file:
-            with open("yosry 5awal"+content['name'],"wb") as file:
+            with open(str(number)+"/"+content['name'],"wb") as file:
                 file.write(content['video'])
                 file.close()
             tableEntry = {'type':'Add','data':[content['id'],content['name'],number 
-                                ,content['name'], True]}
+                                ,str(number)+"/"+content['name'], True]}
             print(tableEntry)
             respond = pickle.dumps(tableEntry)
             masterSocket.send(respond)
             fromMaster  = masterSocket.recv_string()
             print(fromMaster)
+
+        if msg_dict['type'] == "Download":
+             with open(str(number)+"/"+msg_dict['filename'],'rb') as file:  # read video and be ready to send it to client
+                video = file.read()
+             file.close()
+        
+            video_dict = {'filename': msg_dict['filename'], 'video':video}
+            msg = pickle.dumps(video_dict)
+            socket.send(msg) 
         
             
                 
