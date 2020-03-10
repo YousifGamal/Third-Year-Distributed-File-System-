@@ -8,5 +8,5 @@ python machineScript.py <master ip address> <ports per machine for data> <no. of
 
 to run client
 
-python client.py <id> <no. of master's ports> <command> <file name>
+python client.py <id> <no. of master's ports> <command> <file name> <master IP address>
 
