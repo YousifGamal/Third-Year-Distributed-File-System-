@@ -7,6 +7,7 @@ id = int(sys.argv[1])
 masterProcessesNumber =  int(sys.argv[2])
 command = sys.argv[3]
 filename = sys.argv[4]
+master_IP = sys.argv[5]
 
 context = zmq.Context()
 socket  = context.socket(zmq.REQ)
@@ -18,7 +19,7 @@ random.shuffle(masterPortsList)
 for i in masterPortsList:
     port = 6000+i*2
     print(port)
-    socket.connect(f"tcp://192.168.43.209:{port}")
+    socket.connect(f"tcp://"+master_IP+f":{port}")
 
 if command == 'upload':
     msg_dict = {'type':"Upload"}
