@@ -42,4 +42,33 @@ if command == 'upload':
     dataSocket.close()
 
 
+if command == 'download':
+    msg_dict = {'type':"Download",'user_id':id,'filename':filename}
+    print("sent Download request")
+    msg =  pickle.dumps(msg_dict)
+    socket.send(msg)
 
+    msg = socket.recv()
+    msg = pickle.loads(msg)
+
+    if msg['status'] == "Download Request Failed .... File Not Found":
+        # failed Request 
+        print(msg['status'] + "   Make Sure of file name ")
+    else:
+        
+        print("  BE Ready for the download ")
+         
+        msg_to_dk = {'type':"Download",'path':msg['path']}
+        dataPort = msg['port']
+        dataSocket.connect("tcp://127.0.0.1:"+dataPort)
+        print(f"recieved port number {dataPort} to begin download")
+        msg = pickle.dumps(msg_to_dk)  # Send to data node to begin download
+        dataSocket.send(msg)
+
+        msg = dataSocket.recv()       # recieve video from datanode and save it on my pc
+        content = pickle.loads(msg)
+        with open("client/" + filename ,'wb') as file:
+            file.write(content['video'])
+        file.close()
+        
+    dataSocket.close()

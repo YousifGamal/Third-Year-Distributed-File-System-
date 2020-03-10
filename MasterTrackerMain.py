@@ -18,7 +18,7 @@ def secondPassed(oldsecond):
     else:
         return False
 
-def checkAlive(m,portsBusyList,lock,machines_number,dataKeeperNumberPerMachine):
+def checkAlive(m,portsBusyList,lock,machines_number,dataKeeperNumberPerMachine,ns):
     
     if m:
         for i in range(machines_number):
@@ -26,6 +26,9 @@ def checkAlive(m,portsBusyList,lock,machines_number,dataKeeperNumberPerMachine):
                 if secondPassed(m[i][1]):
                     print("Machine#: ", str(m[i][0]) + " ", "died")
                     lock.acquire()
+                    lockUpTable = ns.df
+                    lockUpTable.loc[lockUpTable.data_node_number == i, 'is_data_node_alive'] = False
+                    ns.df = lockUpTable
                     m[i][2] = 0
                     for j in range(dataKeeperNumberPerMachine):
                         portsBusyList[j+i*dataKeeperNumberPerMachine] = 'dead'
@@ -58,7 +61,7 @@ def master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,
         try:
             work = socket.recv_pyobj()
         except zmq.error.Again:
-            machines = checkAlive(machines,portsBusyList,lock,machines_number,dataKeeperNumberPerMachine)
+            machines = checkAlive(machines,portsBusyList,lock,machines_number,dataKeeperNumberPerMachine,ns)
             
             continue    
             
@@ -73,9 +76,12 @@ def master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,
         for i in range(dataKeeperNumberPerMachine):
             if portsBusyList[i+machineN*dataKeeperNumberPerMachine] == 'dead':
                 portsBusyList[i+machineN*dataKeeperNumberPerMachine] = 'alive'
+                lockUpTable = ns.df
+                lockUpTable.loc[lockUpTable.data_node_number == machineN, 'is_data_node_alive'] = True
+                ns.df = lockUpTable
         lock.release()
         print("Subscriber received from machine#:", str(machineN) + " ", message)
-        machines = checkAlive(machines,portsBusyList,lock,machines_number,dataKeeperNumberPerMachine)
+        machines = checkAlive(machines,portsBusyList,lock,machines_number,dataKeeperNumberPerMachine,ns)
         
     
 
@@ -138,6 +144,71 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
                     portsBusyList[index] = 'alive'
                 lock.release()
                 print(ns.df)
+            
+            elif msg_dict['type'] == "Download Finished":
+                lock.acquire()
+                if portsBusyList[msg_dict['port']] == 'busy':
+                    portsBusyList[msg_dict['port']] = 'alive'
+                lock.release()
+                respond = "done"
+                socket.send_string(respond)
+
+            
+            elif msg_dict['type'] == "Download":
+                print("Download request from client")
+                # check if requested file available to download
+                # filtering with query method 
+                user_id = msg_dict['user_id']
+                file_name = msg_dict['filename']
+
+                data = ns.df.query('user_id == @user_id and file_name == @file_name and is_data_node_alive == True')
+                machine_data_found = data['data_node_number'].tolist()  # return machines numbers which have this file
+                machine_data_found_paths = data['file_path_on_that_data_node'].tolist()
+                print(machine_data_found,"   Data Node List")
+                msg = {'status':None , 'port':None ,'path':None }
+                if not machine_data_found:
+                    # no data node have the requested file
+                    msg['status'] = "Download Request Failed .... File Not Found"
+                    msg = pickle.dumps(msg)
+                    socket.send(msg)
+
+                else:
+                    #machine_num = 4
+                    #ports_num = 2
+                    #machine_data_found = [0]
+                    #machine_Status = ["busy","busy","busy","free","busy","busy","busy","free"] # to simulate
+
+                    # Generate machines ports number
+                    ports = []
+                    port_list_idx = []
+                    for m in machine_data_found:
+                        port_list_idx.extend([((m * dataKeeperNumberPerMachine) + i) for i in range(dataKeeperNumberPerMachine)])         # indices of available ports
+                        #ports.extend([ ((m * ports_num) + i) * 2 +8000 for i in range(ports_num)])      # ports of corresponding Indices
+                        
+                    print(port_list_idx)
+                    print(ports)
+
+                    Busy = True
+                    portn = None
+                    path = None
+                    while Busy:
+                        for idx in port_list_idx:
+                            lock.acquire()
+                            if portsBusyList[idx] == "alive":
+                                portsBusyList[idx] = "busy"
+                                msg['path'] = machine_data_found_paths[idx // dataKeeperNumberPerMachine]
+                                Busy = False
+                                msg['port']= str(idx * 2 +8000)
+                                msg['status'] = 'success'
+                                break
+                        lock.release()
+
+
+                    print(msg['port'])
+                    msg = pickle.dumps(msg)
+                    socket.send(msg)
+                    
+                    # wait for complete download request to free port again 
  
      
     else:

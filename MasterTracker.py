@@ -15,7 +15,6 @@ datakeeper_number = int(sys.argv[2])
 machines_number = int(sys.argv[3])
 
 
-
 manager = Manager()
 ns = manager.Namespace()
 ns.df = df
@@ -42,6 +41,7 @@ for i in range(processes_number):
 
 while True:
     print(portsStatusList)
+    print(ns.df)
     time.sleep(1)
 print(portsStatusList)
 print(ns.df)

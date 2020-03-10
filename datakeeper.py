@@ -46,23 +46,40 @@ elif type == 1: #data keeper node
             content = msg_dict
             
             print(content['name'])
-            with open(str(machineNumber)+"/"+content['name'],"wb") as file:
+            path = str(number)+"/"+content['name']
+            with open(path,"wb") as file:
                 file.write(content['video'])
                 file.close()
             port = number*2+8000
             tableEntry = {'type':'Add','data':[content['id'],content['name'],machineNumber 
-                                ,content['name'], True, port]}
+                                ,path, True, port]}
             print(tableEntry)
             respond = pickle.dumps(tableEntry)
             masterSocket.send(respond)
             fromMaster  = masterSocket.recv_string()
             print(fromMaster)
-            
             socket.close()
             time.sleep(.1)
             socket = context.socket(zmq.REP)
             port = int(port)
             socket.bind(f"tcp://127.0.0.1:{port}")
+
+        if msg_dict['type'] == "Download":
+
+            with open(msg_dict['path'],'rb') as file:  # read video and be ready to send it to client
+                video = file.read()
+            file.close()
+        
+            video_dict = {'video':video}
+            msg = pickle.dumps(video_dict)
+            socket.send(msg)
+            respond = {'type': 'Download Finished','port':number}
+            respond = pickle.dumps(respond)
+            masterSocket.send(respond)
+            fromMaster  = masterSocket.recv_string()
+        
+            
+            
 
                 
             
