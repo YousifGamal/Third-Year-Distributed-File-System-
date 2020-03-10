@@ -138,6 +138,54 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
                     portsBusyList[index] = 'alive'
                 lock.release()
                 print(ns.df)
+            
+            elif msg_dict['type'] == "Download":
+                print("Download request from client")
+                # check if requested file available to download
+                # filtering with query method 
+                user_id = msg_dict['user_id']
+                file_name = msg_dict['filename']
+
+                data = ns.df.query('user_id == @user_id and file_name == @file_name and is_data_node_alive == True')
+                machine_data_found = data['data_node_number'].tolist()  # return machines numbers which have this file
+                print(machine_data_found,"   Data Node List")
+
+                if not machine_data_found:
+                    # no data node have the requested file
+                    msg = "Download Request Failed .... File Not Found"
+                    socket.send_string(msg)
+
+                else:
+                    #machine_num = 4
+                    #ports_num = 2
+                    #machine_data_found = [0]
+                    machine_Status = ["busy","busy","busy","free","busy","busy","busy","free"] # to simulate
+
+                    # Generate machines ports number
+                    ports = []
+                    port_list_idx = []
+                    for m in machine_data_found:
+                        port_list_idx.extend([((m * ports_num) + i) for i in range(ports_num)])         # indices of available ports
+                        ports.extend([ ((m * ports_num) + i) * 2 +8000 for i in range(ports_num)])      # ports of corresponding Indices
+                        
+                    print(port_list_idx)
+                    print(ports)
+
+                    Busy = True
+                    portn = None
+                    while Busy:
+                        for idx in port_list_idx:
+                            if machine_Status[idx] == "free":
+                                machine_Status[idx] = "busy"
+                                Busy = False
+                                portno = idx * 2 +8000
+                                break
+
+                    print(portno)
+                    portno = str(portno)
+                    socket.send_string(port)
+                    
+                    # wait for complete download request to free port again 
  
      
     else:

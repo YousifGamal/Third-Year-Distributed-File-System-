@@ -57,6 +57,16 @@ elif type == 1: #data keeper node
             masterSocket.send(respond)
             fromMaster  = masterSocket.recv_string()
             print(fromMaster)
+
+        if msg_dict['type'] == "Download":
+             with open(str(number)+"/"+msg_dict['filename'],'rb') as file:  # read video and be ready to send it to client
+                video = file.read()
+             file.close()
+        
+            video_dict = {'filename': msg_dict['filename'], 'video':video}
+            msg = pickle.dumps(video_dict)
+            socket.send(msg) 
+        
             
             socket.close()
             time.sleep(.1)
