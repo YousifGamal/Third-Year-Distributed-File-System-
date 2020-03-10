@@ -18,7 +18,7 @@ random.shuffle(masterPortsList)
 for i in masterPortsList:
     port = 6000+i*2
     print(port)
-    socket.connect(f"tcp://127.0.0.1:{port}")
+    socket.connect(f"tcp://192.168.43.209:{port}")
 
 if command == 'upload':
     msg_dict = {'type':"Upload"}
@@ -28,7 +28,7 @@ if command == 'upload':
     dataPort = socket.recv_string()
     print(dataPort)
     dataPort = int(dataPort)
-    dataSocket.connect(f"tcp://127.0.0.1:{dataPort}")
+    dataSocket.connect(f"tcp://192.168.43.177:{dataPort}")
     print(f"recieved port number {dataPort}")
     
     with open(filename,'rb') as file:

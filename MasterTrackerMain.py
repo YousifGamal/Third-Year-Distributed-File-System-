@@ -53,7 +53,7 @@ def master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,
     socket.subscribe("")
     socket.RCVTIMEO = 0
     for port in ports:
-        socket.connect(f"tcp://127.0.0.1:{port}")
+        socket.connect(f"tcp://192.168.43.177:{port}")
     while True:
         try:
             work = socket.recv_pyobj()
@@ -89,7 +89,7 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
         context = zmq.Context()
         socket = context.socket(zmq.REP)
         port = proc_num*2+6000
-        socket.bind(f"tcp://127.0.0.1:{port}")# create server port
+        socket.bind(f"tcp://192.168.43.209:{port}")# create server port
         socket.RCVTIMEO = 0
         # create random order of data ports
         randomPortList = list(range(0,datakeeper_number))

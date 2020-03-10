@@ -46,7 +46,7 @@ elif type == 1: #data keeper node
             content = msg_dict
             
             print(content['name'])
-            with open("yosry 5awal"+content['name'],"wb") as file:
+            with open(str(machineNumber)+"/"+content['name'],"wb") as file:
                 file.write(content['video'])
                 file.close()
             port = number*2+8000
