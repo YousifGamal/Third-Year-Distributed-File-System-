@@ -8,7 +8,7 @@ def hartBeatHandler(number):
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
     port = 9000+number*2
-    socket.bind(f"tcp://192.168.43.177:{port}")
+    socket.bind(f"tcp://127.0.0.1:{port}")
     message = "I am alive"
     while True:
         data = {'Machine#':number, 'message':message}
@@ -25,7 +25,7 @@ if type == 0:
 elif type == 1: #data keeper node
     context = zmq.Context()
     socket = context.socket(zmq.REP)
-    socket.bind(f"tcp://192.168.43.177:{number*2+8000}")# create server port
+    socket.bind(f"tcp://127.0.0.1:{number*2+8000}")# create server port
 
     masterSocket = context.socket(zmq.REQ)# connect to master sockets as client
     #randomiza connection to master nodes
@@ -36,7 +36,7 @@ elif type == 1: #data keeper node
 
     for i in masterPortsList:
         port = 6000+i*2
-        masterSocket.connect(f"tcp://192.168.43.209:{port}")
+        masterSocket.connect(f"tcp://127.0.0.1:{port}")
     while True:
         msg = socket.recv()
         msg_dict = pickle.loads(msg)
@@ -46,33 +46,40 @@ elif type == 1: #data keeper node
             content = msg_dict
             
             print(content['name'])
-            with open(str(number)+"/"+content['name'],"wb") as file:
+            path = str(number)+"/"+content['name']
+            with open(path,"wb") as file:
                 file.write(content['video'])
                 file.close()
             port = number*2+8000
             tableEntry = {'type':'Add','data':[content['id'],content['name'],machineNumber 
-                                ,content['name'], True, port]}
+                                ,path, True, port]}
             print(tableEntry)
             respond = pickle.dumps(tableEntry)
             masterSocket.send(respond)
             fromMaster  = masterSocket.recv_string()
             print(fromMaster)
-
-        if msg_dict['type'] == "Download":
-             with open(str(number)+"/"+msg_dict['filename'],'rb') as file:  # read video and be ready to send it to client
-                video = file.read()
-             file.close()
-        
-            video_dict = {'filename': msg_dict['filename'], 'video':video}
-            msg = pickle.dumps(video_dict)
-            socket.send(msg) 
-        
-            
             socket.close()
             time.sleep(.1)
             socket = context.socket(zmq.REP)
             port = int(port)
-            socket.bind(f"tcp://192.168.43.177:{port}")
+            socket.bind(f"tcp://127.0.0.1:{port}")
+
+        if msg_dict['type'] == "Download":
+
+            with open(msg_dict['path'],'rb') as file:  # read video and be ready to send it to client
+                video = file.read()
+            file.close()
+        
+            video_dict = {'video':video}
+            msg = pickle.dumps(video_dict)
+            socket.send(msg)
+            respond = {'type': 'Download Finished','port':number}
+            respond = pickle.dumps(respond)
+            masterSocket.send(respond)
+            fromMaster  = masterSocket.recv_string()
+        
+            
+            
 
                 
             
