@@ -1,3 +1,4 @@
+
 from multiprocessing import *
 import time
 
@@ -75,7 +76,27 @@ def master_heart_beat(lock,ns,datakeeper_number,machines,portsBusyList,machines_
         
 
 
-
+def replicate(ns, lock, replicationSocket):
+    ip = "127.0.0.1"
+    lock.acquire()
+    lookUpTable = ns.df
+    for file in range(len(lookUpTable)):
+        fileName = lookUpTable['file_name'][file]
+        fileCount = len(lookUpTable[lookUpTable["file_name"] == fileName])
+        if fileCount < 2:
+            sourceMachine = lookUpTable['data_node_number'][file]
+            sourceMachineFilePath = lookUpTable['file_path_on_that_data_node'][file]
+            temp_lookUp = lookUpTable[lookUpTable["file_name"] != fileName]
+            dstMachines = temp_lookUp["data_node_number"].tolist()
+            data = {'type':"Replication", 'src':sourceMachine, 'ip':ip}
+            print("sending data to dst machine.." )
+            replicationSocket.send_pyobj(data) #send to datakeepers
+            print("data sent")
+            time.sleep(1000)
+    ns.df = lookUpTable
+    lock.release()
+        
+        
 
 def all(ns,lock,fg,proc_num,datakeeper_number,machines,portsBusyList,machines_number): 
     if (fg == 1):
@@ -99,13 +120,18 @@ def all(ns,lock,fg,proc_num,datakeeper_number,machines,portsBusyList,machines_nu
         dataKeeperPortsList = list(range(0,datakeeper_number))
         random.shuffle(dataKeeperPortsList)
 
-        dataKeeperSocket = context.socket(zmq.REQ)# connect to data keepers ports
+        dataKeeperSocket = context.socket(zmq.REQ)# connect to data keepers ports      
+        replicationSocket = context.socket(zmq.PUB)
+        replicationSocket.bind("tcp://*:4000")
+        
         for i in dataKeeperPortsList:
             port = i*2+8000
             dataKeeperSocket.connect(f"tcp://127.0.0.1:{port}")
+
         
         
         while True:
+            replicate(ns, lock, replicationSocket)
             try:
                 msg = socket.recv()
             except zmq.error.Again:
@@ -118,11 +144,10 @@ def all(ns,lock,fg,proc_num,datakeeper_number,machines,portsBusyList,machines_nu
                 print("data keeper port number "+msg)
                 socket.send_string(msg) # send port number to client
             elif msg_dict['type']=="Add": #add to look up table
-                
                 respond = "done"
                 socket.send_string(respond)
                 lock.acquire()
-                data = msg_dict['data'] # get data from dictionary(
+                data = msg_dict['data'] # get data from dictionary
                 print(data)
                 lookUpTable = ns.df
                 lookUpTable = lookUpTable.append(add_row(data),ignore_index=True)

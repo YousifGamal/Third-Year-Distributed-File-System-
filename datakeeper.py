@@ -1,10 +1,11 @@
+
 import zmq
 import time
 import sys
 import pickle
 import random
 
-hartBeatHandler(number){
+def hartBeatHandler(number):
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
     port = 9000+number*2
@@ -14,7 +15,7 @@ hartBeatHandler(number){
         data = {'Machine#':number, 'message':message}
         socket.send_pyobj(data)
         time.sleep(1)
-}
+
 
 type = int(sys.argv[1])
 if type == 0:
@@ -32,11 +33,12 @@ elif type == 1: #data keeper node
     
     random.shuffle(masterPortsList)
     print(masterPortsList)
-
+    
+    
     for i in masterPortsList:
         port = 6000+i*2
         masterSocket.connect(f"tcp://127.0.0.1:{port}")
-    while True:
+    while True:        
         msg = socket.recv()
         msg_dict = pickle.loads(msg)
         if msg_dict['type'] == "Upload":
@@ -67,7 +69,3 @@ elif type == 1: #data keeper node
             masterSocket.send(respond)
             fromMaster  = masterSocket.recv_string()
             print(fromMaster)
-        
-            
-                
-            
