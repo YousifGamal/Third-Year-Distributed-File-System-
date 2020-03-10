@@ -80,7 +80,7 @@ def master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,
                 lockUpTable.loc[lockUpTable.data_node_number == machineN, 'is_data_node_alive'] = True
                 ns.df = lockUpTable
         lock.release()
-        print("Subscriber received from machine#:", str(machineN) + " ", message)
+        #print("Subscriber received from machine#:", str(machineN) + " ", message)
         machines = checkAlive(machines,portsBusyList,lock,machines_number,dataKeeperNumberPerMachine,ns)
         
     
@@ -102,7 +102,7 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
         random.shuffle(randomPortList)
 
         print(randomPortList)
-        dataKeeperSocket = context.socket(zmq.REQ)# connect to data keepers ports        
+        #dataKeeperSocket = context.socket(zmq.REQ)# connect to data keepers ports        
         
         while True:
             try:
@@ -110,6 +110,7 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
             except zmq.error.Again:
                 continue
             msg_dict = pickle.loads(msg)
+            print(msg_dict['type'])
             if msg_dict['type'] == "Upload":
                 print("upload request from client")
                 #choose alive port to connect to
@@ -131,7 +132,9 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
                 socket.send_string(msg) # send port number to client
             elif msg_dict['type']=="Add": #add to look up table
                 respond = "done"
+                print("recieved add request")
                 socket.send_string(respond)
+                print("sent respond")
                 lock.acquire()
                 data = msg_dict['data'] # get data from dictionary(
                 print(data)

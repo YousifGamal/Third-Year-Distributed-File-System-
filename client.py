@@ -37,8 +37,6 @@ if command == 'upload':
     video_dict = {'type':"Upload",'name': filename, 'video':video, 'id': id}
     msg = pickle.dumps(video_dict)
     dataSocket.send(msg)
-    
-    
     dataSocket.close()
 
 
@@ -60,7 +58,7 @@ if command == 'download':
          
         msg_to_dk = {'type':"Download",'path':msg['path']}
         dataPort = msg['port']
-        dataSocket.connect("tcp://127.0.0.1:"+dataPort)
+        dataSocket.connect("tcp://192.168.43.177:"+dataPort)
         print(f"recieved port number {dataPort} to begin download")
         msg = pickle.dumps(msg_to_dk)  # Send to data node to begin download
         dataSocket.send(msg)
