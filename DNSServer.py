@@ -47,7 +47,6 @@ def DNSServer(IP_table, machines_count):
 
 
 
-	IP_table = {}
 	for i in range(int(machines_count)):
 		print("machine added " + str(i))
 		# time.sleep(5)
@@ -58,6 +57,7 @@ def DNSServer(IP_table, machines_count):
 	print(IP_table)
 	machine_ip_assignment_socket.close()
 	machine_numbers_resolver_socket.close()
+	IP_table[-2] = False
 
 	# while True:
 	# 	time.sleep(1)

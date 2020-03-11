@@ -36,7 +36,10 @@ for i in range(machines_number*datakeeper_number):
     portsStatusList.append('dead')
 
 print(portsStatusList)
+IP_table[-2] = True
 Process(target=DNSServer, args=(IP_table, machines_number)).start()
+while IP_table[-2]:
+    pass
 Process(target=all, args=(ns,lock,0,0,datakeeper_number,machines,portsStatusList,machines_number,IP_table)).start()
 for i in range(processes_number):
     Process(target=all, args=(ns,lock,1,i,datakeeper_number,machines,portsStatusList,machines_number,IP_table)).start()

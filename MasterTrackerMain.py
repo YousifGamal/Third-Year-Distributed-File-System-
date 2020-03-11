@@ -56,6 +56,8 @@ def master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,
     socket.subscribe("")
     socket.RCVTIMEO = 0
     for i in range(len(ports)):
+        
+        print("tcp://"+IP_table[i]+f":{ports[i]}")
         socket.connect("tcp://"+IP_table[i]+f":{ports[i]}")
     while True:
         try:
