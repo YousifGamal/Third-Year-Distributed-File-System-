@@ -6,7 +6,7 @@
 	"configurations": [
 		{
 			"name": "Python: Current File",
-			"args": [ "5" ],
+			"args": [ "1", "0", "1", "0", "192.168.43.141", "192.168.43.209" ],
 			"type": "python",
 			"request": "launch",
 			"program": "${file}",
