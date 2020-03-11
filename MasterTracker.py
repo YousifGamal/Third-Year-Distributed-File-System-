@@ -1,5 +1,6 @@
 from multiprocessing import *
 from MasterTrackerMain import *
+from DNSServer import *
 import sys
 
 
@@ -19,7 +20,7 @@ machines_number = int(sys.argv[3])
 manager = Manager()
 ns = manager.Namespace()
 ns.df = df
-
+IP_table = manager.dict()
 lock = manager.Lock()
 machines = manager.dict()
 #initailzing the dic of lists used in the heart beat
@@ -35,14 +36,19 @@ for i in range(machines_number*datakeeper_number):
     portsStatusList.append('dead')
 
 print(portsStatusList)
-Process(target=all, args=(ns,lock,0,0,datakeeper_number,machines,portsStatusList,machines_number)).start()
+IP_table[-2] = True
+Process(target=DNSServer, args=(IP_table, machines_number)).start()
+while IP_table[-2]:
+    pass
+Process(target=all, args=(ns,lock,0,0,datakeeper_number,machines,portsStatusList,machines_number,IP_table)).start()
 for i in range(processes_number):
-    Process(target=all, args=(ns,lock,1,i,datakeeper_number,machines,portsStatusList,machines_number)).start()
+    Process(target=all, args=(ns,lock,1,i,datakeeper_number,machines,portsStatusList,machines_number,IP_table)).start()
 
 
 while True:
     print(portsStatusList)
-    time.sleep(1)
+    print(ns.df)
+    time.sleep(3)
 print(portsStatusList)
 print(ns.df)
 
