@@ -107,7 +107,7 @@ elif type == 1: #data keeper node
             context = zmq.Context()
             recieve_replica = context.socket(zmq.PAIR)
             #recieve_replica.subscribe("") 
-            recieve_replica.connect(f"tcp://127.0.0.1:{5000+msg_dict['idx']}")
+            recieve_replica.connect(f"tcp://{src_ip}:{5000+msg_dict['idx']}")
             print("waiting for msg from src")
             msg = recieve_replica.recv()
             msg = pickle.loads(msg)
@@ -144,7 +144,8 @@ elif type == 1: #data keeper node
                # socket to pub on
                 context = zmq.Context()
                 send_replica = context.socket(zmq.PAIR)
-                send_replica.bind(f"tcp://127.0.0.1:{5000+i}")
+                
+                send_replica.bind("tcp://"+local_ip+f":{5000+i}")
                 msg = pickle.dumps(video_dict)
                 send_replica.send(msg)
                 

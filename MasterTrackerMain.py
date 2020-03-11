@@ -88,36 +88,44 @@ def master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,
     
 
 
-def replicate(ns, lock, context, machinesNumber, dataKeeperNumberPerMachine, portsBusyList, randomPortList):
+def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,machinesNumber,IP_table,context):
     ip = "127.0.0.1"
     #lock.acquire()
     lookUpTable = ns.df
     for file in range(len(lookUpTable)):
         fileName = lookUpTable['file_name'][file]
-        fileCount = len(lookUpTable[lookUpTable["file_name"] == fileName])
-        print("fileCount = ", fileCount)
-        if fileCount < 2:
-            sourceMachines = lookUpTable["data_node_number"][lookUpTable["file_name"] == fileName].tolist()
-            print('sourceMachines = ', sourceMachines)
-            sourceMachine = sourceMachines[0]
-            sourceMachineFilePaths = lookUpTable['file_path_on_that_data_node'][lookUpTable["data_node_number"] == sourceMachine].tolist()
-            sourceMachineFilePath = sourceMachineFilePaths[0]
-            userIds = lookUpTable['user_id'][lookUpTable["data_node_number"] == sourceMachine].tolist()
-            userId = userIds[0]
+        user_Id = lookUpTable['user_id'][file]
+        userFile = ns.df.query('user_id == @user_Id and file_name == @fileName and is_data_node_alive == True')
+        userFileCount = len(userFile)
+        sourceMachines = userFile['data_node_number'].tolist()  # return machines numbers which have this file
+        sourceMachine = sourceMachines[0]
+        sourceMachineFilePath = userFile['file_path_on_that_data_node'].tolist()[0]
+        userId = userFile['user_id'].tolist()[0]
+        if userFileCount < 2:
+            #print('userFileCount ************************** = ', userFileCount, " UserId:", user_Id)
+            #sourceMachines = lookUpTable["data_node_number"][lookUpTable["file_name"] == fileName].tolist()
+            #print('sourceMachines = ', sourceMachines)
+            #sourceMachine = sourceMachines[0]
+            #sourceMachineFilePaths = lookUpTable['file_path_on_that_data_node'][lookUpTable["data_node_number"] == sourceMachine].tolist()
+            #sourceMachineFilePath = sourceMachineFilePaths[0]
+            #userIds = lookUpTable['user_id'][lookUpTable["data_node_number"] == sourceMachine].tolist()
+            #userId = userIds[0]
 
             tempList = [item for item in range(0, machinesNumber)]
-            print(machinesNumber,"machines number ")
+            #print(machinesNumber,"machines number ")
             dstMachines = list(set(tempList) - set(sourceMachines))
 
 
-            print("dstMachines = ", dstMachines)
+            #print("dstMachines = ", dstMachines)
             if not dstMachines:
                 return
             #choose alive port to connect to
             dstDataPorts = []
             freeDsts = 0
             iterate = 0
-            neededReplicasCount = 2 - fileCount
+            neededReplicasCount = 2 - userFileCount
+
+
             print("neededReplicasCount = ", neededReplicasCount)
             
             while freeDsts < neededReplicasCount:
@@ -134,7 +142,9 @@ def replicate(ns, lock, context, machinesNumber, dataKeeperNumberPerMachine, por
                     lock.acquire()
                     if portsBusyList[dstMachines[iterate] * dataKeeperNumberPerMachine + i] == 'alive':
                         portsBusyList[dstMachines[iterate] * dataKeeperNumberPerMachine + i] = 'busy'
-                        dstDataPorts.append(((dstMachines[iterate] * dataKeeperNumberPerMachine + i) * 2) + 8000)
+                        temp = ((dstMachines[iterate] * dataKeeperNumberPerMachine + i) * 2) + 8000
+                        temp = "tcp://"+IP_table[dstMachines[iterate]]+f":{temp}"
+                        dstDataPorts.append(temp)
                         freeDsts += 1
                         breakLoop = True
                     lock.release()
@@ -148,6 +158,7 @@ def replicate(ns, lock, context, machinesNumber, dataKeeperNumberPerMachine, por
             print(f"source machine : {sourceMachine}")
             exit = False
             srcPort = 0
+            src_port = 0
             i = 0
             while not exit:
                 #print("inside while looop")
@@ -159,6 +170,8 @@ def replicate(ns, lock, context, machinesNumber, dataKeeperNumberPerMachine, por
                         #print(f"inside if condition  {sourceMachine * dataKeeperNumberPerMachine + i}")
                         portsBusyList[sourceMachine * dataKeeperNumberPerMachine + i] = 'busy'
                         srcPort = ((sourceMachine * dataKeeperNumberPerMachine + i) * 2)  + 8000
+                        src_port = ((sourceMachine * dataKeeperNumberPerMachine + i) * 2)  + 8000
+                        srcPort = "tcp://"+IP_table[sourceMachine]+f":{srcPort}"
                         exit = True
                         lock.release()
                         break
@@ -171,7 +184,7 @@ def replicate(ns, lock, context, machinesNumber, dataKeeperNumberPerMachine, por
 
 
             dataKeeperSocket = context.socket(zmq.REQ)
-            dataKeeperSocket.connect(f"tcp://127.0.0.1:{srcPort}")
+            dataKeeperSocket.connect(srcPort)
             srcData = {'type':"ReplicationSrc", 'count':len(dstDataPorts), 'filePath': sourceMachineFilePath}
             msg =  pickle.dumps(srcData)
             print("sending data to src machine.." )
@@ -186,10 +199,10 @@ def replicate(ns, lock, context, machinesNumber, dataKeeperNumberPerMachine, por
 
 
             for i in range(len(dstDataPorts)):
-                dstData = {'type':"ReplicationDst", 'srcPort':5000, 'src_ip':ip,'idx':i, 'user_id': userId, 'fileName':fileName}
+                dstData = {'type':"ReplicationDst", 'srcPort':5000, 'src_ip':IP_table[sourceMachine],'idx':i, 'user_id': userId, 'fileName':fileName}
                 msg =  pickle.dumps(dstData)
                 dataKeeperSocket = context.socket(zmq.REQ)
-                dataKeeperSocket.connect(f"tcp://127.0.0.1:{dstDataPorts[i]}")
+                dataKeeperSocket.connect(dstDataPorts[i])
                 dataKeeperSocket.send(msg)
                 print("waiting for replica response")
                 msg = dataKeeperSocket.recv()
@@ -211,11 +224,12 @@ def replicate(ns, lock, context, machinesNumber, dataKeeperNumberPerMachine, por
                 print(ns.df)
                 dataKeeperSocket.close()
             lock.acquire()
-            src_port_index = (srcPort-8000)//2
+            src_port_index = (src_port-8000)//2
             if portsBusyList[src_port_index]=='busy':
                 portsBusyList[src_port_index]='alive'
             lock.release()
             
+            #print("yaraaaab-------------------------------")
             
         #    for i in range(len(dstDataPorts)):
         #        dataKeeperSocket = context.socket(zmq.REP)
@@ -283,7 +297,7 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
         #dataKeeperSocket = context.socket(zmq.REQ)# connect to data keepers ports        
         
         while True:
-            replicate(ns, lock, context, machinesNumber, dataKeeperNumberPerMachine, portsBusyList, randomPortList)
+            replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,machinesNumber,IP_table,context)
             try:
                 msg = socket.recv()
             except zmq.error.Again:
@@ -309,7 +323,7 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
                     lock.release()
                     iterate += 1
                 print(dataPort)
-                msg = "tcp://"+IP_table[port_index]+":"+str(dataPort)
+                msg = "tcp://"+IP_table[port_index//dataKeeperNumberPerMachine]+":"+str(dataPort)
                 socket.send_string(msg) # send port number to client
             elif msg_dict['type']=="Add": #add to look up table
                 respond = "done"
