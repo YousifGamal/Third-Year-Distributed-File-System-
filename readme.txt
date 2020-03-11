@@ -1,4 +1,4 @@
-To run master machine 
+	To run master machine 
 
 python MasterTracker.py <no. of ports> <ports per machine for data> <no. of machines>
 
