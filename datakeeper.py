@@ -4,7 +4,7 @@ import sys
 import pickle
 import random
 
-def hartBeatHandler(number):
+def hartBeatHandler(number,local_ip):
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
     port = 9000+number*2
@@ -15,7 +15,7 @@ def hartBeatHandler(number):
         socket.send_pyobj(data)
         time.sleep(1)
 
-
+print(sys.argv,len(sys.argv),sys.argv[5])
 type = int(sys.argv[1])
 number = int(sys.argv[2])
 masterProcesseNumbers = int(sys.argv[3])
@@ -23,7 +23,7 @@ machineNumber = int(sys.argv[4])
 local_ip = sys.argv[5]
 master_ip = sys.argv[6]
 if type == 0:
-    hartBeatHandler(machineNumber)
+    hartBeatHandler(machineNumber,local_ip)
 elif type == 1: #data keeper node
     context = zmq.Context()
     socket = context.socket(zmq.REP)
