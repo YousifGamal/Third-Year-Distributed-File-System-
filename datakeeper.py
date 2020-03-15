@@ -144,7 +144,7 @@ elif type == 1: #data keeper node
                # socket to pub on
                 context = zmq.Context()
                 send_replica = context.socket(zmq.PAIR)
-                
+                print(msg_dict)
                 send_replica.bind("tcp://"+local_ip+f":{5000+i}")
                 msg = pickle.dumps(video_dict)
                 send_replica.send(msg)
