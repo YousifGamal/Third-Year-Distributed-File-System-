@@ -43,7 +43,7 @@ def checkAlive(m,portsBusyList,lock,machines_number,dataKeeperNumberPerMachine,n
 
 def add_row(inp):
     return {"user_id" : inp[0] , 'file_name' : inp[1] , 'data_node_number':inp[2],
-            'file_path_on_that_data_node':inp[3],'is_data_node_alive':inp[4]}
+            'file_path_on_that_data_node':inp[3],'is_data_node_alive':inp[4],'replicate':inp[5]}
 
 def master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,machines_number,IP_table):
     ports = list()
@@ -95,13 +95,17 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
     for file in range(len(lookUpTable)):
         fileName = lookUpTable['file_name'][file]
         user_Id = lookUpTable['user_id'][file]
-        userFile = ns.df.query('user_id == @user_Id and file_name == @fileName and is_data_node_alive == True')
+        lock.acquire()
+        userFile = ns.df.query('user_id == @user_Id and file_name == @fileName and is_data_node_alive == True and replicate == False')
         userFileCount = len(userFile)
         sourceMachines = userFile['data_node_number'].tolist()  # return machines numbers which have this file
         sourceMachine = sourceMachines[0]
         sourceMachineFilePath = userFile['file_path_on_that_data_node'].tolist()[0]
         userId = userFile['user_id'].tolist()[0]
         if userFileCount < 2:
+            for i in sourceMachines:
+                lookUpTable.loc[lookUpTable.data_node_number == i, 'replicate'] = True
+            lock.release()  
             #print('userFileCount ************************** = ', userFileCount, " UserId:", user_Id)
             #sourceMachines = lookUpTable["data_node_number"][lookUpTable["file_name"] == fileName].tolist()
             #print('sourceMachines = ', sourceMachines)
@@ -218,8 +222,8 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
                 ns.df = lookUpTable
                 print("came hereeeeeeeeeee")
                 #mark this port as alive
-                if portsBusyList[data[5]] == 'busy':
-                    portsBusyList[data[5]] = 'alive'
+                if portsBusyList[data[6]] == 'busy':
+                    portsBusyList[data[6]] = 'alive'
                 lock.release()
                 print(ns.df)
                 dataKeeperSocket.close()
@@ -227,10 +231,14 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
             src_port_index = (src_port-8000)//2
             if portsBusyList[src_port_index]=='busy':
                 portsBusyList[src_port_index]='alive'
+            
+            for i in sourceMachines:
+                lookUpTable.loc[lookUpTable.data_node_number == i, 'replicate'] = False
             lock.release()
             
             #print("yaraaaab-------------------------------")
-            
+        else:
+            lock.release()    
         #    for i in range(len(dstDataPorts)):
         #        dataKeeperSocket = context.socket(zmq.REP)
         #        dataKeeperSocket.connect(f"tcp://127.0.0.1:{dstDataPorts[i]}")
@@ -336,7 +344,7 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
                 lookUpTable = lookUpTable.append(add_row(data),ignore_index=True)
                 ns.df = lookUpTable
                 #mark this port as alive
-                index = int((data[5] - 8000) / 2)
+                index = int((data[6] - 8000) / 2)
                 if portsBusyList[index] == 'busy':
                     portsBusyList[index] = 'alive'
                 lock.release()

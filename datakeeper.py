@@ -67,7 +67,7 @@ elif type == 1: #data keeper node
                 file.close()
             port = number*2+8000
             tableEntry = {'type':'Add','data':[content['id'],content['name'],machineNumber 
-                                ,path, True, port]}
+                                ,path, True,False,port]} 
             print(tableEntry)
             respond = pickle.dumps(tableEntry)
             masterSocket.send(respond)
@@ -115,7 +115,7 @@ elif type == 1: #data keeper node
             with open("rep/"+fileName ,"wb") as file:
                 file.write(msg['video'])
             file.close()
-            tableEntry = [userId, fileName, machineNumber, "rep/"+fileName, True, number]
+            tableEntry = [userId, fileName, machineNumber, "rep/"+fileName, True,False,number]
             tableEntry = pickle.dumps(tableEntry)
             socket.send(tableEntry)
             print("sent respond to master")
