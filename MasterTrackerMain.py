@@ -99,12 +99,16 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
         userFile = ns.df.query('user_id == @user_Id and file_name == @fileName and is_data_node_alive == True and replicate == False')
         userFileCount = len(userFile)
         sourceMachines = userFile['data_node_number'].tolist()  # return machines numbers which have this file
+        if userFileCount == 0:
+            lock.release()
+            continue
         sourceMachine = sourceMachines[0]
         sourceMachineFilePath = userFile['file_path_on_that_data_node'].tolist()[0]
         userId = userFile['user_id'].tolist()[0]
         if userFileCount < 2:
             for i in sourceMachines:
                 lookUpTable.loc[lookUpTable.data_node_number == i, 'replicate'] = True
+                ns.df = lookUpTable
             lock.release()  
             #print('userFileCount ************************** = ', userFileCount, " UserId:", user_Id)
             #sourceMachines = lookUpTable["data_node_number"][lookUpTable["file_name"] == fileName].tolist()
@@ -230,12 +234,14 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
                 print(ns.df)
                 dataKeeperSocket.close()
             lock.acquire()
+            lookUpTable = ns.df
             src_port_index = (src_port-8000)//2
             if portsBusyList[src_port_index]=='busy':
                 portsBusyList[src_port_index]='alive'
             
             for i in sourceMachines:
                 lookUpTable.loc[lookUpTable.data_node_number == i, 'replicate'] = False
+            ns.df = lookUpTable
             lock.release()
             
             #print("yaraaaab-------------------------------")
@@ -345,6 +351,7 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
                 lookUpTable = ns.df
                 lookUpTable = lookUpTable.append(add_row(data),ignore_index=True)
                 ns.df = lookUpTable
+                print(data)
                 #mark this port as alive
                 index = int((data[6] - 8000) / 2)
                 if portsBusyList[index] == 'busy':
