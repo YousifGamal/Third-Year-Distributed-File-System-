@@ -96,6 +96,7 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
         fileName = lookUpTable['file_name'][file]
         user_Id = lookUpTable['user_id'][file]
         lock.acquire()
+        lookUpTable = ns.df
         userFile = ns.df.query('user_id == @user_Id and file_name == @fileName and is_data_node_alive == True and replicate == False')
         userFileCount = len(userFile)
         sourceMachines = userFile['data_node_number'].tolist()  # return machines numbers which have this file
@@ -105,10 +106,11 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
         sourceMachine = sourceMachines[0]
         sourceMachineFilePath = userFile['file_path_on_that_data_node'].tolist()[0]
         userId = userFile['user_id'].tolist()[0]
+        #print(f"count from query = {userFileCount}")
         if userFileCount < 2:
-            for i in sourceMachines:
-                lookUpTable.loc[lookUpTable.data_node_number == i, 'replicate'] = True
-                ns.df = lookUpTable
+            #for i in sourceMachines:
+            lookUpTable.loc[(lookUpTable.file_name == fileName) & (lookUpTable.user_id == userId), 'replicate'] = True
+            ns.df = lookUpTable
             lock.release()  
             #print('userFileCount ************************** = ', userFileCount, " UserId:", user_Id)
             #sourceMachines = lookUpTable["data_node_number"][lookUpTable["file_name"] == fileName].tolist()
@@ -229,18 +231,23 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
                 print("came hereeeeeeeeeee")
                 #mark this port as alive
                 if portsBusyList[data[6]] == 'busy':
+                    print("dst busy port is now free")
                     portsBusyList[data[6]] = 'alive'
                 lock.release()
                 print(ns.df)
                 dataKeeperSocket.close()
+            print("want to take lock to free source port")
             lock.acquire()
+            
             lookUpTable = ns.df
             src_port_index = (src_port-8000)//2
+            print(f"lock is grnted to free port {src_port_index}")
             if portsBusyList[src_port_index]=='busy':
+                print("src busy port is now free")
                 portsBusyList[src_port_index]='alive'
             
-            for i in sourceMachines:
-                lookUpTable.loc[lookUpTable.data_node_number == i, 'replicate'] = False
+            #for i in sourceMachines:
+            lookUpTable.loc[(lookUpTable.file_name == fileName) & (lookUpTable.user_id == userId), 'replicate'] = False
             ns.df = lookUpTable
             lock.release()
             
@@ -412,9 +419,11 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
                                 portsBusyList[idx] = "busy"
                                 msg['path'] = machine_data_found_paths[idx // dataKeeperNumberPerMachine]
                                 Busy = False
-                                msg['port']= "tcp://"+IP_table[idx]+":"+str(idx * 2 +8000)
+                                temp = idx * 2 +8000
+                                msg['port']= "tcp://"+IP_table[idx]+":"+str(temp)
                                 msg['status'] = 'success'
                                 break
+                            lock.release()
                         lock.release()
 
 
