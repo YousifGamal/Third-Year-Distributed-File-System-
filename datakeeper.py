@@ -21,7 +21,7 @@ type = int(sys.argv[1])
 number = int(sys.argv[2])
 masterProcesseNumbers = int(sys.argv[3])
 machineNumber = int(sys.argv[4])
-#dataKeeperNumberPerMachine = 2
+dataKeeperNumberPerMachine = int(sys.argv[7])
 
 local_ip = sys.argv[5]
 master_ip = sys.argv[6]
@@ -143,19 +143,20 @@ elif type == 1: #data keeper node
             file.close()
             video_dict = {'video':video}
             for i in range(msg_dict['count']):
-                print("this is the source sending to destination no. "+str(i)+" from source port: "+str(5000+i+100*number))
+                local_number = number - machineNumber*dataKeeperNumberPerMachine
+                print("this is the source sending to destination no. "+str(i)+" from source port: "+str(5000+i+100*local_number))
                # socket to pub on
                 context = zmq.Context()
                 send_replica = context.socket(zmq.PAIR)
                 print(msg_dict, i,range(msg_dict['count']))
-                send_replica.bind("tcp://"+local_ip+f":{5000+i+100*number}")
+                send_replica.bind("tcp://"+local_ip+f":{5000+i+100*local_number}")
                 msg = pickle.dumps(video_dict)
                 send_replica.send(msg)
                 
                 #send_replica.send(msg)
                 #send_replica.send(msg)
                 #socket.send_string("dadaddadad")
-                print(f"Msg published to destinations from src port:{5000+i+100*number}")  
+                print(f"Msg published to destinations from src port:{5000+i+100*local_number}")  
                 send_replica.close()
                 #socket.close()
                 #time.sleep(.1)

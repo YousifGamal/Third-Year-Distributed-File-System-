@@ -31,9 +31,9 @@ numberOfMasterPorts = int(sys.argv[3])
 
 local_IP,machineNumber = DNSClient(master_IP)
 #open heart beat process
-os.system(f'python datakeeper.py 0 {machineNumber} {numberOfMasterPorts} {machineNumber} '+ local_IP +' '+ master_IP +' &')
+os.system(f'python datakeeper.py 0 {machineNumber} {numberOfMasterPorts} {machineNumber} '+ local_IP +' '+ master_IP +' '+numberOfPorts+' &')
 for i in range(numberOfPorts):
     print(f'python datakeeper.py 1 {machineNumber*numberOfPorts+i} {numberOfMasterPorts} {machineNumber} '+ local_IP+' '+ master_IP+ ' &')
-    os.system(f'python datakeeper.py 1 {machineNumber*numberOfPorts+i} {numberOfMasterPorts} {machineNumber} '+ local_IP +' '+ master_IP+' &')
+    os.system(f'python datakeeper.py 1 {machineNumber*numberOfPorts+i} {numberOfMasterPorts} {machineNumber} '+ local_IP +' '+ master_IP+' '+numberOfPorts+' &')
 
 #os.system('python datakeeper.py 1 1 2 &')
