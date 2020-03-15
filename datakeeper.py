@@ -100,6 +100,7 @@ elif type == 1: #data keeper node
 
         if msg_dict['type'] == "ReplicationDst":
             
+            print("this is the destination recieving from source port:",msg_dict['srcPort'])
              # socket to sub to 
             srcPort = msg_dict['srcPort']
             src_ip = msg_dict['src_ip']
@@ -142,6 +143,7 @@ elif type == 1: #data keeper node
             file.close()
             video_dict = {'video':video}
             for i in range(msg_dict['count']):
+                print("this is the source sending to destination no. "+i+" from source port: "+str(5000+i+100*number))
                # socket to pub on
                 context = zmq.Context()
                 send_replica = context.socket(zmq.PAIR)
