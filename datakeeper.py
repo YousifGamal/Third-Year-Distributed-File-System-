@@ -143,7 +143,7 @@ elif type == 1: #data keeper node
             file.close()
             video_dict = {'video':video}
             for i in range(msg_dict['count']):
-                print("this is the source sending to destination no. "+i+" from source port: "+str(5000+i+100*number))
+                print("this is the source sending to destination no. "+str(i)+" from source port: "+str(5000+i+100*number))
                # socket to pub on
                 context = zmq.Context()
                 send_replica = context.socket(zmq.PAIR)
