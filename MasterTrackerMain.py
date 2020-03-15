@@ -125,6 +125,7 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
                 return
             #choose alive port to connect to
             dstDataPorts = []
+            srcDataKeeperNumber = -1
             freeDsts = 0
             iterate = 0
             neededReplicasCount = 2 - userFileCount
@@ -175,6 +176,7 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
                         portsBusyList[sourceMachine * dataKeeperNumberPerMachine + i] = 'busy'
                         srcPort = ((sourceMachine * dataKeeperNumberPerMachine + i) * 2)  + 8000
                         src_port = ((sourceMachine * dataKeeperNumberPerMachine + i) * 2)  + 8000
+                        srcDataKeeperNumber = i
                         srcPort = "tcp://"+IP_table[sourceMachine]+f":{srcPort}"
                         exit = True
                         lock.release()
@@ -203,7 +205,7 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
 
 
             for i in range(len(dstDataPorts)):
-                dstData = {'type':"ReplicationDst", 'srcPort':5000, 'src_ip':IP_table[sourceMachine],'idx':i, 'user_id': userId, 'fileName':fileName}
+                dstData = {'type':"ReplicationDst", 'srcPort':5000+srcDataKeeperNumber*100+i, 'src_ip':IP_table[sourceMachine],'idx':i, 'user_id': userId, 'fileName':fileName}
                 msg =  pickle.dumps(dstData)
                 dataKeeperSocket = context.socket(zmq.REQ)
                 dataKeeperSocket.connect(dstDataPorts[i])
