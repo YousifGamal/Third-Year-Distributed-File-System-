@@ -70,7 +70,7 @@ if command == 'download':
        
         path = 'client'
         try:  
-        os.mkdir(path)  
+            os.mkdir(path)  
         except OSError as error:  
             pass
 

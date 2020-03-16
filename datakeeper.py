@@ -53,7 +53,7 @@ elif type == 1: #data keeper node
             print(content['name'])
             path = str(number)
             try:  
-            os.mkdir(path)  
+                os.mkdir(path)  
             except OSError as error:  
                 pass
             path = str(number)+"/"+content['name']
@@ -110,7 +110,7 @@ elif type == 1: #data keeper node
             msg = pickle.loads(msg)
             path = "rep"
             try:  
-            os.mkdir(path)  
+                os.mkdir(path)  
             except OSError as error:  
                 pass
 
