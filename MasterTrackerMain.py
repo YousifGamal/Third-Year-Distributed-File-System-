@@ -1,15 +1,14 @@
-
-from multiprocessing import *
-import time
-from datetime import datetime
-
-import pandas as pd
-import numpy as np
-
-import zmq
-import sys
 import pickle
 import random
+import sys
+import time
+from datetime import datetime
+from multiprocessing import *
+
+import numpy as np
+import pandas as pd
+import zmq
+
 
 def secondPassed(oldsecond):
     currentsecond = datetime.timestamp(datetime.now())
@@ -105,7 +104,6 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
         sourceMachineFilePath = userFile['file_path_on_that_data_node'].tolist()[0]
         userId = userFile['user_id'].tolist()[0]
         if userFileCount < replications_count:
-            #for i in sourceMachines:
             lookUpTable.loc[(lookUpTable.file_name == fileName) & (lookUpTable.user_id == userId), 'replicate'] = True
             ns.df = lookUpTable
               
@@ -116,7 +114,6 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
                     tempList.append(i)
             dstMachines = list(set(tempList) - set(sourceMachines))
             lock.release()
-            print(dstMachines,"dst machines")
             if not dstMachines:
                 lock.acquire()
                 lookUpTable = ns.df
@@ -131,8 +128,6 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
             iterate = 0
             neededReplicasCount = replications_count - userFileCount
 
-
-            print("neededReplicasCount = ", neededReplicasCount)
             
             if neededReplicasCount > len(dstMachines):
                 neededReplicasCount = len(dstMachines)
@@ -153,7 +148,6 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
                         dstDataPorts.append(temp)
                         freeDsts += 1
                         breakLoop = True
-                        print("inside if cond")
                     lock.release()
                     if breakLoop:
                         break
@@ -161,8 +155,7 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
                 
                 iterate += 1
             print(dstDataPorts)
-            print("hereeee")
-            print(f"source machine : {sourceMachine}")
+            print(f"Source machine found to start replication : {sourceMachine}")
             exit = False
             srcPort = 0
             src_port = 0
@@ -184,8 +177,6 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
                         lock.release()
                         break
                     lock.release()
-            print(srcPort)
-            print("passed")
             
 
 
@@ -195,15 +186,13 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
             dataKeeperSocket.connect(srcPort)
             srcData = {'type':"ReplicationSrc", 'count':len(dstDataPorts), 'filePath': sourceMachineFilePath}
             msg =  pickle.dumps(srcData)
-            print("sending data to src machine.." )
             dataKeeperSocket.send(msg)
-            print("data sent")
+            print("Sending data to src machine.." )
             msg = dataKeeperSocket.recv_string()
-            print(msg)
             dataKeeperSocket.close()
             time.sleep(0.1)
 
-            print("sending data to dst machine.." )
+            print("Sending data to dst machines.." )
 
 
             for i in range(len(dstDataPorts)):
@@ -212,37 +201,30 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
                 dataKeeperSocket = context.socket(zmq.REQ)
                 dataKeeperSocket.connect(dstDataPorts[i])
                 dataKeeperSocket.send(msg)
-                print("waiting for replica response")
                 msg = dataKeeperSocket.recv()
                 msg = pickle.loads(msg)
-                print(msg)
                 
-                print("want to take lock")
                 lock.acquire()
-                print("lock acquireddd")
                 data = msg # get data from dictionary
                 lookUpTable = ns.df
                 lookUpTable = lookUpTable.append(add_row(data),ignore_index=True)
                 ns.df = lookUpTable
-                print("came hereeeeeeeeeee")
+                print("Destination replicator responsed .. add new file to the table ")
                 #mark this port as alive
                 if portsBusyList[data[6]] == 'busy':
-                    print("dst busy port is now free")
                     portsBusyList[data[6]] = 'alive'
                 lock.release()
                 print(ns.df)
                 dataKeeperSocket.close()
-            print("want to take lock to free source port")
             lock.acquire()
             
             lookUpTable = ns.df
             src_port_index = (src_port-8000)//2
-            print(f"lock is grnted to free port {src_port_index}")
+            #print(f"lock is grnted to free port {src_port_index}")
             if portsBusyList[src_port_index]=='busy':
-                print("src busy port is now free")
+                #print("src busy port is now free")
                 portsBusyList[src_port_index]='alive'
             
-            #for i in sourceMachines:
             lookUpTable.loc[(lookUpTable.file_name == fileName) & (lookUpTable.user_id == userId), 'replicate'] = False
             ns.df = lookUpTable
             lock.release()
@@ -264,7 +246,7 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
         randomPortList = list(range(0,datakeeper_number))
         random.shuffle(randomPortList)
 
-        print(randomPortList)       
+        #print(randomPortList)       
         
         while True:
             replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,machinesNumber,IP_table,context,needed_replications_count)
@@ -273,9 +255,9 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
             except zmq.error.Again:
                 continue
             msg_dict = pickle.loads(msg)
-            print(msg_dict['type'])
+            #print(msg_dict['type'])
             if msg_dict['type'] == "Upload":
-                print("upload request from client")
+                print("Upload request from client")
                 #choose alive port to connect to
                 dataPort = 0
                 exit = False
@@ -292,20 +274,17 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
                         exit = True
                     lock.release()
                     iterate += 1
-                print(dataPort)
                 msg = "tcp://"+IP_table[port_index//dataKeeperNumberPerMachine]+":"+str(dataPort)
                 socket.send_string(msg) # send port number to client
             elif msg_dict['type']=="Add": #add to look up table
                 respond = "done"
-                print("recieved add request")
+                print("Recieved add request")
                 socket.send_string(respond)
-                print("sent respond")
                 lock.acquire()
                 data = msg_dict['data'] # get data from dictionary
                 lookUpTable = ns.df
                 lookUpTable = lookUpTable.append(add_row(data),ignore_index=True)
                 ns.df = lookUpTable
-                print(data)
                 #mark this port as alive
                 index = int((data[6] - 8000) / 2)
                 if portsBusyList[index] == 'busy':
@@ -332,7 +311,7 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
                 data = ns.df.query('user_id == @user_id and file_name == @file_name and is_data_node_alive == True')
                 machine_data_found = data['data_node_number'].tolist()  # return machines numbers which have this file
                 machine_data_found_paths = data['file_path_on_that_data_node'].tolist()
-                print(machine_data_found,"   Data Node List")
+                #print(Machine_data_found,"   Data Node List")
                 msg = {'status':None , 'port':None ,'path':None }
                 if not machine_data_found:
                     # no data node have the requested file
@@ -350,7 +329,7 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
                         port_list_idx.extend([((m * dataKeeperNumberPerMachine) + i) for i in range(dataKeeperNumberPerMachine)])         # indices of available ports
                        
                         
-                    print(port_list_idx)
+                    #print(port_list_idx)
                 
                     Busy = True
                     portn = None
@@ -361,7 +340,6 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
                             if portsBusyList[idx] == "alive":
                                 portsBusyList[idx] = "busy"
                                 temp = idx * 2 + 8000
-                                print("debug_1", msg, IP_table, temp)
                                 msg['path'] = data_dict[idx // dataKeeperNumberPerMachine]
                                 Busy = False
                                 msg['port']= "tcp://"+IP_table[idx // dataKeeperNumberPerMachine]+":"+str(temp)
@@ -370,8 +348,6 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
                             lock.release()
                         lock.release()
 
-
-                    print(msg['port'])
                     msg = pickle.dumps(msg)
                     socket.send(msg)
                     

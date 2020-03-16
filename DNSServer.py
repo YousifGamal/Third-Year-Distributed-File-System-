@@ -35,8 +35,8 @@ def DNSServer(IP_table, machines_count):
 
 
 	for i in range(int(machines_count)):
-		print("machine added " + str(i))
 		machine_numbers_resolver_socket.send_string(str(i))
+		print("Number assigned to machine " + str(i))
 		time.sleep(1)
 
 	machine_ip_assignment_socket = context.socket(zmq.PULL)
@@ -48,9 +48,9 @@ def DNSServer(IP_table, machines_count):
 
 
 	for i in range(int(machines_count)):
-		print("machine added " + str(i))
 		# time.sleep(5)
 		msg = machine_ip_assignment_socket.recv_string()
+		print("IP entry added for machine " + str(i))
 		msg = msg.split()
 		IP_table[int(msg[0])] = msg[1]
 		print(msg)

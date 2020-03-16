@@ -1,11 +1,13 @@
 import os
-import zmq
-import time
-import sys
 import pickle
 import random
+import sys
+import time
 
-def hartBeatHandler(number,local_ip):
+import zmq
+
+
+def heartBeatHandler(number,local_ip):
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
     port = 9000+number*2
@@ -26,7 +28,7 @@ dataKeeperNumberPerMachine = int(sys.argv[7])
 local_ip = sys.argv[5]
 master_ip = sys.argv[6]
 if type == 0:
-    hartBeatHandler(machineNumber,local_ip)
+    heartBeatHandler(machineNumber,local_ip)
 elif type == 1: #data keeper node
     context = zmq.Context()
     socket = context.socket(zmq.REP)
@@ -37,7 +39,7 @@ elif type == 1: #data keeper node
     masterPortsList = list(range(0,masterProcesseNumbers))
 
     random.shuffle(masterPortsList)
-    print(masterPortsList)
+    #print(masterPortsList)
 
     for i in masterPortsList:
         port = 6000+i*2
@@ -47,7 +49,7 @@ elif type == 1: #data keeper node
         msg = socket.recv()
         msg_dict = pickle.loads(msg)
         if msg_dict['type'] == "Upload":
-            print("recieved upload request from client")
+            print("Recieved upload request from client")
             content = msg_dict
             
             print(content['name'])
@@ -61,24 +63,24 @@ elif type == 1: #data keeper node
             with open(path,"wb") as file:
                 file.write(content['video'])
                 file.close()
+            
+            print("Saved the video successfully at path = " + path)
             port = number*2+8000
             tableEntry = {'type':'Add','data':[content['id'],content['name'],machineNumber 
                                 ,path, True,False,port]} 
-            print(tableEntry)
+            #print(tableEntry)
             respond = pickle.dumps(tableEntry)
             masterSocket.send(respond)
-            print("after send")
             fromMaster  = masterSocket.recv_string()
-            print(fromMaster)
             socket.close()
             time.sleep(.1)
             socket = context.socket(zmq.REP)
-            print(port)
             port = int(port)
             socket.bind("tcp://"+local_ip+f":{port}")
 
         if msg_dict['type'] == "Download":
 
+            print("Recieved download request from client")
             with open(msg_dict['path'],'rb') as file:  # read video and be ready to send it to client
                 video = file.read()
             file.close()
@@ -96,7 +98,7 @@ elif type == 1: #data keeper node
 
         if msg_dict['type'] == "ReplicationDst":
             
-            print("this is the destination recieving from source port:",msg_dict['srcPort'])
+            print("This is a replicator destination recieving from source port:",msg_dict['srcPort'])
              # socket to sub to 
             srcPort = msg_dict['srcPort']
             src_ip = msg_dict['src_ip']
@@ -105,7 +107,7 @@ elif type == 1: #data keeper node
             context = zmq.Context()
             recieve_replica = context.socket(zmq.PAIR)
             recieve_replica.connect(f"tcp://{src_ip}:{msg_dict['srcPort']}")
-            print("waiting for msg from src")
+            print("Waiting for the file from src")
             msg = recieve_replica.recv()
             msg = pickle.loads(msg)
             path = "rep"
@@ -123,35 +125,28 @@ elif type == 1: #data keeper node
             with open(path2 +fileName ,"wb") as file:
                 file.write(msg['video'])
             file.close()
-            tableEntry = [userId, fileName, machineNumber, "rep/"+fileName, True,True,number]
+            print("Saved the file successfully at path = " + path2)
+            tableEntry = [userId, fileName, machineNumber, path2+fileName, True,True,number]
             tableEntry = pickle.dumps(tableEntry)
             socket.send(tableEntry)
-            print("sent respond to master")
             recieve_replica.close()
 
                     
         if msg_dict['type'] == "ReplicationSrc":
             socket.send_string("roger that")
-            print("Src machines recieved from master")
             filePath = msg_dict['filePath']
-            print("filePth = ", filePath)
             with open(filePath,'rb') as file:
                 video = file.read()
             file.close()
             video_dict = {'video':video}
             for i in range(msg_dict['count']):
                 local_number = number - machineNumber*dataKeeperNumberPerMachine
-                print("this is the source sending to destination no. "+str(i)+" from source port: "+str(5000+i+100*local_number))
+                print("This is a replicator source sending to destination no. "+str(i)+" from source port: "+str(5000+i+100*local_number))
                # socket to pub on
                 context = zmq.Context()
                 send_replica = context.socket(zmq.PAIR)
-                print(msg_dict, i,range(msg_dict['count']))
                 send_replica.bind("tcp://"+local_ip+f":{5000+i+100*local_number}")
                 msg = pickle.dumps(video_dict)
                 send_replica.send(msg)
-                
-                print(f"Msg published to destinations from src port:{5000+i+100*local_number}")  
+                print(f"File published to destinations from src port:{5000+i+100*local_number}")  
                 send_replica.close()
-                
-                
-            
