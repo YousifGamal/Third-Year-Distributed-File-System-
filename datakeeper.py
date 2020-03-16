@@ -5,7 +5,7 @@ import sys
 import pickle
 import random
 
-def heartBeatHandler(number,local_ip):
+def hartBeatHandler(number,local_ip):
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
     port = 9000+number*2
@@ -114,7 +114,7 @@ elif type == 1: #data keeper node
             except OSError as error:  
                 pass
             
-            path2 = path + "/" + userId + "/"
+            path2 = path + "/" + str(userId) + "/"
             try:
                 os.mkdir(path2)
             except OSError as error:

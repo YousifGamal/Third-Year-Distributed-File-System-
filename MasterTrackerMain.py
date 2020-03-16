@@ -118,10 +118,10 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
             for i in dstMachines:
                 dstFile = ns.df.query('user_id == @user_Id and data_node_number == @i and file_name == @fileName and is_data_node_alive == True and replicate == False')
                 if len(dstFile) == 0:
-                    trueDstMachines.append()
+                    trueDstMachines.append(i)
             lock.release()
             dstMachines = trueDstMachines
-
+            print(dstMachines,"dst machines")
             if not dstMachines:
                 return
             #choose alive port to connect to
@@ -151,6 +151,7 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
                         dstDataPorts.append(temp)
                         freeDsts += 1
                         breakLoop = True
+                        print("inside if cond")
                     lock.release()
                     if breakLoop:
                         break
