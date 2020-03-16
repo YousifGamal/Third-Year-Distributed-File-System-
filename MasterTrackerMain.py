@@ -90,7 +90,7 @@ def master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,
     
 
 
-def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,machinesNumber,IP_table,context):
+def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,machinesNumber,IP_table,context,replications_count):
     ip = "127.0.0.1"
     #lock.acquire()
     lookUpTable = ns.df
@@ -109,7 +109,7 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
         sourceMachineFilePath = userFile['file_path_on_that_data_node'].tolist()[0]
         userId = userFile['user_id'].tolist()[0]
         #print(f"count from query = {userFileCount}")
-        if userFileCount < 2:
+        if userFileCount < replications_count:
             #for i in sourceMachines:
             lookUpTable.loc[(lookUpTable.file_name == fileName) & (lookUpTable.user_id == userId), 'replicate'] = True
             ns.df = lookUpTable
@@ -136,7 +136,7 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
             srcDataKeeperNumber = -1
             freeDsts = 0
             iterate = 0
-            neededReplicasCount = 2 - userFileCount
+            neededReplicasCount = replications_count - userFileCount
 
 
             print("neededReplicasCount = ", neededReplicasCount)
@@ -306,7 +306,7 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
         
 
 
-def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,machinesNumber,IP_table): 
+def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,machinesNumber,IP_table,needed_replications_count):
     if (fg == 1):
         datakeeper_number = dataKeeperNumberPerMachine*machinesNumber
         context = zmq.Context()
@@ -322,7 +322,7 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
         #dataKeeperSocket = context.socket(zmq.REQ)# connect to data keepers ports        
         
         while True:
-            replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,machinesNumber,IP_table,context)
+            replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,machinesNumber,IP_table,context,needed_replications_count)
             try:
                 msg = socket.recv()
             except zmq.error.Again:
@@ -402,14 +402,16 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
                     #machine_Status = ["busy","busy","busy","free","busy","busy","busy","free"] # to simulate
 
                     # Generate machines ports number
-                    ports = []
+                    data_dict = dict()
+
                     port_list_idx = []
-                    for m in machine_data_found:
+                    for k,m in enumerate(machine_data_found):
+                        data_dict[m] = machine_data_found_paths[k]
                         port_list_idx.extend([((m * dataKeeperNumberPerMachine) + i) for i in range(dataKeeperNumberPerMachine)])         # indices of available ports
                         #ports.extend([ ((m * ports_num) + i) * 2 +8000 for i in range(ports_num)])      # ports of corresponding Indices
                         
                     print(port_list_idx)
-                    print(ports)
+                    # print(ports)
 
                     Busy = True
                     portn = None
@@ -419,10 +421,11 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
                             lock.acquire()
                             if portsBusyList[idx] == "alive":
                                 portsBusyList[idx] = "busy"
-                                msg['path'] = machine_data_found_paths[idx // dataKeeperNumberPerMachine]
+                                temp = idx * 2 + 8000
+                                print("debug_1", msg, IP_table, temp)
+                                msg['path'] = data_dict[idx // dataKeeperNumberPerMachine]
                                 Busy = False
-                                temp = idx * 2 +8000
-                                msg['port']= "tcp://"+IP_table[idx]+":"+str(temp)
+                                msg['port']= "tcp://"+IP_table[idx // dataKeeperNumberPerMachine]+":"+str(temp)
                                 msg['status'] = 'success'
                                 break
                             lock.release()

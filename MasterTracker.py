@@ -14,6 +14,7 @@ df = pd.DataFrame(columns=['user_id','file_name','data_node_number','file_path_o
 processes_number = int(sys.argv[1])
 datakeeper_number = int(sys.argv[2])
 machines_number = int(sys.argv[3])
+needed_replications_count = int(sys.argv[4])
 
 
 
@@ -40,9 +41,9 @@ IP_table[-2] = True
 Process(target=DNSServer, args=(IP_table, machines_number)).start()
 while IP_table[-2]:
     pass
-Process(target=all, args=(ns,lock,0,0,datakeeper_number,machines,portsStatusList,machines_number,IP_table)).start()
+Process(target=all, args=(ns,lock,0,0,datakeeper_number,machines,portsStatusList,machines_number,IP_table,needed_replications_count)).start()
 for i in range(processes_number):
-    Process(target=all, args=(ns,lock,1,i,datakeeper_number,machines,portsStatusList,machines_number,IP_table)).start()
+    Process(target=all, args=(ns,lock,1,i,datakeeper_number,machines,portsStatusList,machines_number,IP_table,needed_replications_count)).start()
 
 
 while True:

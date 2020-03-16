@@ -1,6 +1,6 @@
 	To run master machine 
 
-python MasterTracker.py <no. of ports> <ports per machine for data> <no. of machines>
+python MasterTracker.py <no. of ports> <ports per machine for data> <no. of machines> <no. of replications>
 
 to run a data machine
 
