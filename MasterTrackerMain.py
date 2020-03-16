@@ -112,6 +112,15 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
 
             tempList = [item for item in range(0, machinesNumber)]
             dstMachines = list(set(tempList) - set(sourceMachines))
+            trueDstMachines = []
+
+            lock.acquire()
+            for i in dstMachines:
+                dstFile = ns.df.query('user_id == @user_Id and data_node_number == @i and file_name == @fileName and is_data_node_alive == True and replicate == False')
+                if len(dstFile) == 0:
+                    trueDstMachines.append()
+            lock.release()
+            dstMachines = trueDstMachines
 
             if not dstMachines:
                 return

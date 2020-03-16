@@ -5,7 +5,7 @@ import sys
 import pickle
 import random
 
-def hartBeatHandler(number,local_ip):
+def heartBeatHandler(number,local_ip):
     context = zmq.Context()
     socket = context.socket(zmq.PUB)
     port = 9000+number*2
@@ -113,8 +113,14 @@ elif type == 1: #data keeper node
                 os.mkdir(path)  
             except OSError as error:  
                 pass
+            
+            path2 = path + "/" + userId + "/"
+            try:
+                os.mkdir(path2)
+            except OSError as error:
+                pass
 
-            with open("rep/"+fileName ,"wb") as file:
+            with open(path2 +fileName ,"wb") as file:
                 file.write(msg['video'])
             file.close()
             tableEntry = [userId, fileName, machineNumber, "rep/"+fileName, True,True,number]
