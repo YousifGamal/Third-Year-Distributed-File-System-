@@ -39,25 +39,15 @@ elif type == 1: #data keeper node
     random.shuffle(masterPortsList)
     print(masterPortsList)
 
-   
-    """context = zmq.Context()
-    send_replica = context.socket(zmq.PUB)
-    send_replica.bind("tcp://127.0.0.1:4000")
-    context = zmq.Context()
-    recieve_replica = context.socket(zmq.SUB)
-    recieve_replica.subscribe("")""" 
-
-
     for i in masterPortsList:
         port = 6000+i*2
         masterSocket.connect("tcp://"+master_ip+f":{port}")
     while True:
-        #print(f"data keeper with port number {port} waiting .....",port)        
+              
         msg = socket.recv()
         msg_dict = pickle.loads(msg)
         if msg_dict['type'] == "Upload":
             print("recieved upload request from client")
-            #socket.send_string("ay 5raaaaaaaaa !!!!")
             content = msg_dict
             
             print(content['name'])
@@ -114,7 +104,6 @@ elif type == 1: #data keeper node
             fileName = msg_dict['fileName']
             context = zmq.Context()
             recieve_replica = context.socket(zmq.PAIR)
-            #recieve_replica.subscribe("") 
             recieve_replica.connect(f"tcp://{src_ip}:{msg_dict['srcPort']}")
             print("waiting for msg from src")
             msg = recieve_replica.recv()
@@ -134,16 +123,6 @@ elif type == 1: #data keeper node
             print("sent respond to master")
             recieve_replica.close()
 
-            
-            #socket.close()
-            #time.sleep(.1)
-            #socket = context.socket(zmq.REP)
-            #port = int(port)
-            #print(port)
-            #socket.bind(f"tcp://127.0.0.1:{port}")
-            #print("finished")
-            #masterSocket.send_string(f"done replicate send from master {port}")
-            #from_master  = masterSocket.recv_string()
                     
         if msg_dict['type'] == "ReplicationSrc":
             socket.send_string("roger that")
@@ -165,16 +144,8 @@ elif type == 1: #data keeper node
                 msg = pickle.dumps(video_dict)
                 send_replica.send(msg)
                 
-                #send_replica.send(msg)
-                #send_replica.send(msg)
-                #socket.send_string("dadaddadad")
                 print(f"Msg published to destinations from src port:{5000+i+100*local_number}")  
                 send_replica.close()
-                #socket.close()
-                #time.sleep(.1)
-                #socket = context.socket(zmq.REP)
-                #socket.bind(f"tcp://127.0.0.1:{port}")
-                #print("finished")
-                #masterSocket.send_string("done")
+                
                 
             

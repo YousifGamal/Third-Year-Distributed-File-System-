@@ -25,7 +25,6 @@ def checkAlive(m,portsBusyList,lock,machines_number,dataKeeperNumberPerMachine,n
         for i in range(machines_number):
             if m[i][2] == 1:
                 if secondPassed(m[i][1]):
-                   # print("Machine#: ", str(m[i][0]) + " ", "died")
                     lock.acquire()
                     lockUpTable = ns.df
                     lockUpTable.loc[lockUpTable.data_node_number == i, 'is_data_node_alive'] = False
@@ -74,7 +73,6 @@ def master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,
         lock.acquire()
         #declare machine and all of it ports are alive
         #for ports only declare them alive if they were dead
-        #machines[machineN][1] = time.gmtime()[5]
         machines[machineN][1] = datetime.timestamp(datetime.now())
         machines[machineN][2] = 1
         for i in range(dataKeeperNumberPerMachine):
@@ -84,15 +82,13 @@ def master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,
                 lockUpTable.loc[lockUpTable.data_node_number == machineN, 'is_data_node_alive'] = True
                 ns.df = lockUpTable
         lock.release()
-        #print("Subscriber received from machine#:", str(machineN) + " ", message)
         machines = checkAlive(machines,portsBusyList,lock,machines_number,dataKeeperNumberPerMachine,ns)
         
     
 
 
 def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,machinesNumber,IP_table,context,replications_count):
-    ip = "127.0.0.1"
-    #lock.acquire()
+    
     lookUpTable = ns.df
     for file in range(len(lookUpTable)):
         fileName = lookUpTable['file_name'][file]
@@ -108,27 +104,15 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
         sourceMachine = sourceMachines[0]
         sourceMachineFilePath = userFile['file_path_on_that_data_node'].tolist()[0]
         userId = userFile['user_id'].tolist()[0]
-        #print(f"count from query = {userFileCount}")
         if userFileCount < replications_count:
             #for i in sourceMachines:
             lookUpTable.loc[(lookUpTable.file_name == fileName) & (lookUpTable.user_id == userId), 'replicate'] = True
             ns.df = lookUpTable
             lock.release()  
-            #print('userFileCount ************************** = ', userFileCount, " UserId:", user_Id)
-            #sourceMachines = lookUpTable["data_node_number"][lookUpTable["file_name"] == fileName].tolist()
-            #print('sourceMachines = ', sourceMachines)
-            #sourceMachine = sourceMachines[0]
-            #sourceMachineFilePaths = lookUpTable['file_path_on_that_data_node'][lookUpTable["data_node_number"] == sourceMachine].tolist()
-            #sourceMachineFilePath = sourceMachineFilePaths[0]
-            #userIds = lookUpTable['user_id'][lookUpTable["data_node_number"] == sourceMachine].tolist()
-            #userId = userIds[0]
 
             tempList = [item for item in range(0, machinesNumber)]
-            #print(machinesNumber,"machines number ")
             dstMachines = list(set(tempList) - set(sourceMachines))
 
-
-            #print("dstMachines = ", dstMachines)
             if not dstMachines:
                 return
             #choose alive port to connect to
@@ -145,11 +129,9 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
                 if iterate >= len(dstMachines):
                     iterate = 0
                 
-                #print ("dataKeeperNumberPerMachine = ", dataKeeperNumberPerMachine)
                 i = 0
                 breakLoop = False
                 while i < dataKeeperNumberPerMachine:
-                    #print("Searching for free dst port")
                     if i >=dataKeeperNumberPerMachine:
                         i=0
                     lock.acquire()
@@ -174,13 +156,13 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
             src_port = 0
             i = 0
             while not exit:
-                #print("inside while looop")
+                
                 for i in range(dataKeeperNumberPerMachine):
-                    #print(f"inside for loop  {i}")
+                    
                     lock.acquire()
-                    #print(f"outside if condition  {sourceMachine * dataKeeperNumberPerMachine + i}")
+                    
                     if portsBusyList[sourceMachine * dataKeeperNumberPerMachine + i] == 'alive':
-                        #print(f"inside if condition  {sourceMachine * dataKeeperNumberPerMachine + i}")
+                       
                         portsBusyList[sourceMachine * dataKeeperNumberPerMachine + i] = 'busy'
                         srcPort = ((sourceMachine * dataKeeperNumberPerMachine + i) * 2)  + 8000
                         src_port = ((sourceMachine * dataKeeperNumberPerMachine + i) * 2)  + 8000
@@ -253,56 +235,8 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
             ns.df = lookUpTable
             lock.release()
             
-            #print("yaraaaab-------------------------------")
         else:
             lock.release()    
-        #    for i in range(len(dstDataPorts)):
-        #        dataKeeperSocket = context.socket(zmq.REP)
-        #        dataKeeperSocket.connect(f"tcp://127.0.0.1:{dstDataPorts[i]}")
-        #        msg = dataKeeperSocket.recv_string()
-        #        dataKeeperSocket.send_string("done")
-        #        print(msg)
-        #        dataKeeperSocket.close()
-
-
-
-
-
-
-
-#            for i in range(len(dstDataPorts)):
-#                dataKeeperSocket = context.socket(zmq.REQ)
-#                dataKeeperSocket.connect(f"tcp://127.0.0.1:{dstDataPorts[i]}")
-#                dataKeeperSocket.send(msg)
-#                dataKeeperSocket.close()
-#
-#            dataKeeperSocket = context.socket(zmq.REQ)
-#            dataKeeperSocket.connect(f"tcp://127.0.0.1:{srcPort}")
-#            srcData = {'type':"ReplicationSrc"}
-#            msg =  pickle.dumps(srcData)
-#            print("sending data to src machine.." )
-#            dataKeeperSocket.send(msg)
-#            print("data sent")
-#
-#            dataKeeperSocket.close()
-#            time.sleep(0.1)
-#            
-#
-#            for i in range(len(dstDataPorts)):
-#                dataKeeperSocket = context.socket(zmq.REP)
-#                dataKeeperSocket.connect(f"tcp://127.0.0.1:{dstDataPorts[i]}")
-#                msg = dataKeeperSocket.recv_string()
-#                dataKeeperSocket.send_string("done")
-#                print(msg)
-#                dataKeeperSocket.close()
-#            #msg = dataKeeperSocket.recv_string()
-#            #print(msg)
-#            #time.sleep(1000)
-            
-    #ns.df = lookUpTable
-    #lock.release()
-    #print("OUT REPLICTA FUN /////////////////////")
-        
         
 
 
@@ -318,8 +252,7 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
         randomPortList = list(range(0,datakeeper_number))
         random.shuffle(randomPortList)
 
-        print(randomPortList)
-        #dataKeeperSocket = context.socket(zmq.REQ)# connect to data keepers ports        
+        print(randomPortList)       
         
         while True:
             replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,machinesNumber,IP_table,context,needed_replications_count)
@@ -396,23 +329,17 @@ def all(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyList,ma
                     socket.send(msg)
 
                 else:
-                    #machine_num = 4
-                    #ports_num = 2
-                    #machine_data_found = [0]
-                    #machine_Status = ["busy","busy","busy","free","busy","busy","busy","free"] # to simulate
-
-                    # Generate machines ports number
+        
                     data_dict = dict()
 
                     port_list_idx = []
                     for k,m in enumerate(machine_data_found):
                         data_dict[m] = machine_data_found_paths[k]
                         port_list_idx.extend([((m * dataKeeperNumberPerMachine) + i) for i in range(dataKeeperNumberPerMachine)])         # indices of available ports
-                        #ports.extend([ ((m * ports_num) + i) * 2 +8000 for i in range(ports_num)])      # ports of corresponding Indices
+                       
                         
                     print(port_list_idx)
-                    # print(ports)
-
+                
                     Busy = True
                     portn = None
                     path = None

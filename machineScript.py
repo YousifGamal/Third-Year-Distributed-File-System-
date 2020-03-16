@@ -36,4 +36,3 @@ for i in range(numberOfPorts):
     print(f'python datakeeper.py 1 {machineNumber*numberOfPorts+i} {numberOfMasterPorts} {machineNumber} '+ local_IP+' '+ master_IP+ ' &')
     os.system(f'python datakeeper.py 1 {machineNumber*numberOfPorts+i} {numberOfMasterPorts} {machineNumber} '+ local_IP +' '+ master_IP+' '+str(numberOfPorts)+' &')
 
-#os.system('python datakeeper.py 1 1 2 &')
