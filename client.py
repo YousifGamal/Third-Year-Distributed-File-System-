@@ -2,6 +2,7 @@ import zmq
 import time
 import sys
 import pickle
+import os
 import random
 id = int(sys.argv[1])
 masterProcessesNumber =  int(sys.argv[2])
@@ -66,6 +67,13 @@ if command == 'download':
 
         msg = dataSocket.recv()       # recieve video from datanode and save it on my pc
         content = pickle.loads(msg)
+       
+        path = 'client'
+        try:  
+        os.mkdir(path)  
+        except OSError as error:  
+            pass
+
         with open("client/" + filename ,'wb') as file:
             file.write(content['video'])
         file.close()

@@ -61,7 +61,13 @@ elif type == 1: #data keeper node
             content = msg_dict
             
             print(content['name'])
+            path = str(number)
+            try:  
+            os.mkdir(path)  
+            except OSError as error:  
+                pass
             path = str(number)+"/"+content['name']
+            
             with open(path,"wb") as file:
                 file.write(content['video'])
                 file.close()
@@ -113,6 +119,12 @@ elif type == 1: #data keeper node
             print("waiting for msg from src")
             msg = recieve_replica.recv()
             msg = pickle.loads(msg)
+            path = "rep"
+            try:  
+            os.mkdir(path)  
+            except OSError as error:  
+                pass
+
             with open("rep/"+fileName ,"wb") as file:
                 file.write(msg['video'])
             file.close()
