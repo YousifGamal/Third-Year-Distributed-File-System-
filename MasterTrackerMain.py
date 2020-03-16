@@ -108,19 +108,14 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
             #for i in sourceMachines:
             lookUpTable.loc[(lookUpTable.file_name == fileName) & (lookUpTable.user_id == userId), 'replicate'] = True
             ns.df = lookUpTable
-            lock.release()  
+              
 
-            tempList = [item for item in range(0, machinesNumber)]
+            tempList = []
+            for i in range (machinesNumber):
+                if  machines[i][2] == 1:
+                    tempList.append(i)
             dstMachines = list(set(tempList) - set(sourceMachines))
-            trueDstMachines = []
-
-            lock.acquire()
-            for i in dstMachines:
-                dstFile = ns.df.query('user_id == @user_Id and data_node_number == @i and file_name == @fileName and is_data_node_alive == True and replicate == True')
-                if len(dstFile) == 0:
-                    trueDstMachines.append(i)
             lock.release()
-            dstMachines = trueDstMachines
             print(dstMachines,"dst machines")
             if not dstMachines:
                 lock.acquire()
@@ -139,6 +134,8 @@ def replicate(ns,lock,fg,proc_num,dataKeeperNumberPerMachine,machines,portsBusyL
 
             print("neededReplicasCount = ", neededReplicasCount)
             
+            if neededReplicasCount > len(dstMachines):
+                neededReplicasCount = len(dstMachines)
             while freeDsts < neededReplicasCount:
                 if iterate >= len(dstMachines):
                     iterate = 0
