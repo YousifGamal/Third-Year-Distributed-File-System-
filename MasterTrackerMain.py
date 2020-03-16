@@ -1,6 +1,7 @@
 
 from multiprocessing import *
 import time
+from datetime import datetime
 
 import pandas as pd
 import numpy as np
@@ -11,7 +12,7 @@ import pickle
 import random
 
 def secondPassed(oldsecond):
-    currentsecond = time.gmtime()[5]
+    currentsecond = datetime.timestamp(datetime.now())
     if ((currentsecond - oldsecond) >= 2):
         oldsecond = currentsecond
         return True
@@ -73,7 +74,8 @@ def master_heart_beat(lock,ns,dataKeeperNumberPerMachine,machines,portsBusyList,
         lock.acquire()
         #declare machine and all of it ports are alive
         #for ports only declare them alive if they were dead
-        machines[machineN][1] = time.gmtime()[5]
+        #machines[machineN][1] = time.gmtime()[5]
+        machines[machineN][1] = datetime.timestamp(datetime.now())
         machines[machineN][2] = 1
         for i in range(dataKeeperNumberPerMachine):
             if portsBusyList[i+machineN*dataKeeperNumberPerMachine] == 'dead':
