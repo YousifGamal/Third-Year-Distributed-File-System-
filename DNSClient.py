@@ -2,7 +2,6 @@ import socket
 import zmq
 import signal
 import sys
-import requests
 
 
 # print("tcp://"+local_ip_address[:last_octet_index+1]+str(2)+":11000")
@@ -52,8 +51,6 @@ def DNSClient(master_IP):
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	s.connect(('8.8.8.8',0))  # connect() for UDP doesn't send packets
 	local_ip_address = str(s.getsockname()[0])
-	f = requests.request('GET', 'http://myip.dnsomatic.com')
-	local_ip_address = f.text
 	#Get a machine number from master
 	context = zmq.Context()
 	socket_pull_number = context.socket(zmq.PULL)
@@ -68,3 +65,7 @@ def DNSClient(master_IP):
 	push_ip_socket.send_string(str(machine_number)+" "+local_ip_address)
 	push_ip_socket.close()
 	socket_pull_number.close()
+
+
+
+
