@@ -4,7 +4,7 @@ import pickle
 import time
 import signal
 import sys
-
+import requests
 
 machine_ip_assignment_socket = "tgf"
 def signal_handler(sig, frame):
@@ -22,6 +22,8 @@ def DNSServer(IP_table, machines_count):
 	s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 	s.connect(('8.8.8.8',0))  # connect() for UDP doesn't send packets
 	local_ip_address = s.getsockname()[0]
+	f = requests.request('GET', 'http://myip.dnsomatic.com')
+	local_ip_address = f.text
 	IP_table[-1] = local_ip_address
 	print(local_ip_address)
 	last_octet_index = local_ip_address.rfind(".")
@@ -94,7 +96,3 @@ def DNSServer(IP_table, machines_count):
 	# myIP["ip"] = local_ip_address
 	# msg  = pickle.dumps(myIP)
 	# socket.send(msg)
-
-
-
-
